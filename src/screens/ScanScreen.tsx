@@ -4,6 +4,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { recognizeText } from '../lib/ocr';
 import { translate } from '../lib/translate';
 import { getPronunciation } from '../lib/pronounce';
+import { fetchSummary } from '../lib/wikipedia';
 import { PhotoOverlay } from '../components/PhotoOverlay';
 import { MenuList } from '../components/MenuList';
 import type { MenuItem } from '../types';
@@ -68,6 +69,17 @@ export function ScanScreen() {
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
   }, []);
 
+  const handleShowDescription = useCallback(
+    async (id: string) => {
+      updateItem(id, { descriptionState: 'loading' });
+      const item = items.find((i) => i.id === id);
+      if (!item) return;
+      const summary = await fetchSummary(item.translated);
+      updateItem(id, { description: summary, descriptionState: summary ? 'loaded' : 'unavailable' });
+    },
+    [items, updateItem]
+  );
+
   if (!permission) {
     return <View style={styles.center} />;
   }
@@ -96,7 +108,7 @@ export function ScanScreen() {
       {status === 'processing' && <Text style={styles.text}>분석 중...</Text>}
       {status === 'noText' && <Text style={styles.text}>텍스트를 찾지 못했습니다. 다시 촬영해주세요.</Text>}
       {status === 'error' && <Text style={styles.text}>처리 중 오류가 발생했습니다. 다시 촬영해주세요.</Text>}
-      <MenuList items={items} onShowDescription={() => {}} />
+      <MenuList items={items} onShowDescription={handleShowDescription} />
       <Button title="다시 촬영" onPress={reset} />
     </ScrollView>
   );
