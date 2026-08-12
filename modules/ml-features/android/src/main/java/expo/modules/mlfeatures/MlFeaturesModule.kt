@@ -1,5 +1,7 @@
 package expo.modules.mlfeatures
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import com.atilika.kuromoji.ipadic.Tokenizer
 import com.google.mlkit.common.model.DownloadConditions
@@ -46,16 +48,31 @@ class MlFeaturesModule : Module() {
 
     AsyncFunction("recognizeText").SuspendBody { imageUri: String ->
       val context = appContext.reactContext!!
-      val image = InputImage.fromFilePath(context, Uri.parse(imageUri))
+      val path = Uri.parse(imageUri).path
+      val originalBitmap = path?.let { BitmapFactory.decodeFile(it) }
+      val scaleFactor = 1.6f
+
+      val (image, effectiveScale) = if (originalBitmap != null) {
+        val scaledBitmap = Bitmap.createScaledBitmap(
+          originalBitmap,
+          (originalBitmap.width * scaleFactor).toInt(),
+          (originalBitmap.height * scaleFactor).toInt(),
+          true
+        )
+        InputImage.fromBitmap(scaledBitmap, 0) to scaleFactor
+      } else {
+        InputImage.fromFilePath(context, Uri.parse(imageUri)) to 1f
+      }
+
       val result = textRecognizer.process(image).await()
       result.textBlocks.flatMap { block -> block.lines }.map { line ->
         val box = line.boundingBox
         mapOf(
           "text" to line.text,
-          "x" to (box?.left ?: 0),
-          "y" to (box?.top ?: 0),
-          "width" to (box?.width() ?: 0),
-          "height" to (box?.height() ?: 0)
+          "x" to ((box?.left ?: 0) / effectiveScale).toInt(),
+          "y" to ((box?.top ?: 0) / effectiveScale).toInt(),
+          "width" to ((box?.width() ?: 0) / effectiveScale).toInt(),
+          "height" to ((box?.height() ?: 0) / effectiveScale).toInt()
         )
       }
     }

@@ -5,7 +5,9 @@ import { recognizeText } from '../lib/ocr';
 import { translate } from '../lib/translate';
 import { getPronunciation } from '../lib/pronounce';
 import { fetchSummary } from '../lib/wikipedia';
+import { lookupFoodTerm } from '../lib/food-dictionary';
 import { PhotoOverlay } from '../components/PhotoOverlay';
+import { TranslatedLayout } from '../components/TranslatedLayout';
 import { MenuList } from '../components/MenuList';
 import { PrimaryButton } from '../components/PrimaryButton';
 import type { MenuItem } from '../types';
@@ -46,10 +48,10 @@ export function ScanScreen() {
 
       const menuItems = await Promise.all(
         lines.map(async (line, index) => {
-          const [translated, pronunciation] = await Promise.all([
-            translate(line.text, 'ja', 'ko'),
-            getPronunciation(line.text),
-          ]);
+          const known = lookupFoodTerm(line.text);
+          const [translated, pronunciation] = known
+            ? [known.translated, known.pronunciation]
+            : await Promise.all([translate(line.text, 'ja', 'ko'), getPronunciation(line.text)]);
           const item: MenuItem = {
             id: `${index}-${line.text}`,
             original: line.text,
@@ -126,10 +128,11 @@ export function ScanScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-      <PhotoOverlay uri={photoUri} items={items} />
+      <PhotoOverlay uri={photoUri} />
       {status === 'processing' && <Text style={styles.statusText}>분석 중...</Text>}
       {status === 'noText' && <Text style={styles.statusText}>텍스트를 찾지 못했습니다. 다시 촬영해주세요.</Text>}
       {status === 'error' && <Text style={[styles.statusText, styles.errorText]}>처리 중 오류가 발생했습니다. 다시 촬영해주세요.</Text>}
+      <TranslatedLayout uri={photoUri} items={items} />
       <MenuList items={items} onShowDescription={handleShowDescription} />
       <PrimaryButton title="다시 촬영" onPress={reset} variant="secondary" />
     </ScrollView>
