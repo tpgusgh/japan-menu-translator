@@ -40,5 +40,9 @@ yarn-error.*
 /ios
 /android
 
+# local Expo module build artifacts
+modules/*/android/build/
+modules/*/android/.gradle/
+
 # parent repo worktrees
 .worktrees/
