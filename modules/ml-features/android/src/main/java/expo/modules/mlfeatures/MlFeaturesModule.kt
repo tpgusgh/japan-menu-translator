@@ -2,6 +2,8 @@ package expo.modules.mlfeatures
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.graphics.Rect
 import android.net.Uri
 import com.atilika.kuromoji.ipadic.Tokenizer
 import com.google.mlkit.common.model.DownloadConditions
@@ -43,6 +45,31 @@ class MlFeaturesModule : Module() {
       else -> throw IllegalArgumentException("Unsupported language: $lang")
     }
 
+  private fun japaneseCharScore(text: String): Int =
+    text.count { c -> c.code in 0x3040..0x30FF || c.code in 0x4E00..0x9FFF }
+
+  private fun blockItem(box: Rect?, text: String, effectiveScale: Float): Map<String, Any?> =
+    mapOf(
+      "text" to text,
+      "x" to ((box?.left ?: 0) / effectiveScale).toInt(),
+      "y" to ((box?.top ?: 0) / effectiveScale).toInt(),
+      "width" to ((box?.width() ?: 0) / effectiveScale).toInt(),
+      "height" to ((box?.height() ?: 0) / effectiveScale).toInt()
+    )
+
+  // Maps a bounding box from a 90deg-counterclockwise-rotated bitmap back to the
+  // pre-rotation bitmap's coordinate space. `preRotateWidth` is the width of the
+  // bitmap *before* rotation (Bitmap.createBitmap swaps width/height on rotation).
+  private fun unrotateBox(box: Rect?, preRotateWidth: Int): Rect? =
+    box?.let {
+      Rect(
+        preRotateWidth - it.top - it.height(),
+        it.left,
+        preRotateWidth - it.top,
+        it.left + it.width()
+      )
+    }
+
   override fun definition() = ModuleDefinition {
     Name("MlFeatures")
 
@@ -62,33 +89,48 @@ class MlFeaturesModule : Module() {
         (targetLongSide.toFloat() / longSide).coerceIn(1f, 4f)
       } ?: 1f
 
-      val (image, effectiveScale) = if (originalBitmap != null) {
-        val scaledBitmap = Bitmap.createScaledBitmap(
-          originalBitmap,
-          (originalBitmap.width * scaleFactor).toInt(),
-          (originalBitmap.height * scaleFactor).toInt(),
+      val scaledBitmap = originalBitmap?.let {
+        Bitmap.createScaledBitmap(
+          it,
+          (it.width * scaleFactor).toInt(),
+          (it.height * scaleFactor).toInt(),
           true
         )
-        InputImage.fromBitmap(scaledBitmap, 0) to scaleFactor
-      } else {
-        InputImage.fromFilePath(context, Uri.parse(imageUri)) to 1f
       }
+      val effectiveScale = if (scaledBitmap != null) scaleFactor else 1f
+      val image = scaledBitmap?.let { InputImage.fromBitmap(it, 0) }
+        ?: InputImage.fromFilePath(context, Uri.parse(imageUri))
 
       val result = textRecognizer.process(image).await()
       // Group by ML Kit's own block (paragraph) instead of individual lines, so a
       // dish name that wraps to two lines stays one item instead of being split into
       // two unrelated fragments that each translate to garbage.
-      result.textBlocks.map { block ->
-        val box = block.boundingBox
-        val text = block.lines.joinToString(" ") { it.text }
-        mapOf(
-          "text" to text,
-          "x" to ((box?.left ?: 0) / effectiveScale).toInt(),
-          "y" to ((box?.top ?: 0) / effectiveScale).toInt(),
-          "width" to ((box?.width() ?: 0) / effectiveScale).toInt(),
-          "height" to ((box?.height() ?: 0) / effectiveScale).toInt()
-        )
+      val horizontalItems = result.textBlocks.map { block ->
+        blockItem(block.boundingBox, block.lines.joinToString(" ") { it.text }, effectiveScale)
       }
+
+      // ML Kit's recognizer is built for horizontal text; traditional Japanese vertical
+      // signage/menus (tategaki, top-to-bottom columns) mostly comes back empty or
+      // garbled. Rotate the same (already-upscaled) bitmap 90deg CCW so vertical
+      // columns become horizontal lines, run the same recognizer again, and map the
+      // boxes back. Whichever orientation actually found more Japanese text wins --
+      // a menu is essentially always one or the other, not a mix.
+      val verticalItems = scaledBitmap?.let { preRotate ->
+        val rotated = Bitmap.createBitmap(
+          preRotate, 0, 0, preRotate.width, preRotate.height,
+          Matrix().apply { postRotate(-90f) }, true
+        )
+        val rotatedResult = textRecognizer.process(InputImage.fromBitmap(rotated, 0)).await()
+        rotatedResult.textBlocks.map { block ->
+          val text = block.lines.joinToString(" ") { it.text }
+          blockItem(unrotateBox(block.boundingBox, preRotate.width), text, effectiveScale)
+        }
+      } ?: emptyList()
+
+      fun score(items: List<Map<String, Any?>>) =
+        items.sumOf { japaneseCharScore(it["text"] as String) }
+
+      if (score(verticalItems) > score(horizontalItems)) verticalItems else horizontalItems
     }
 
     AsyncFunction("isModelDownloaded").SuspendBody { lang: String ->
