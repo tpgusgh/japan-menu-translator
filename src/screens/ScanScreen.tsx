@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { View, StyleSheet, Pressable, Text, ScrollView } from 'react-native';
+import { View, StyleSheet, Pressable, Text, ScrollView, Modal } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { recognizeText } from '../lib/ocr';
 import { translate, type TranslateMode } from '../lib/translate';
@@ -23,6 +23,7 @@ export function ScanScreen() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [status, setStatus] = useState<Status>('idle');
   const [mode, setMode] = useState<TranslateMode>('offline');
+  const [showModePicker, setShowModePicker] = useState(false);
 
   const reset = useCallback(() => {
     setPhotoUri(null);
@@ -107,27 +108,33 @@ export function ScanScreen() {
     return (
       <View style={styles.container}>
         <CameraView ref={cameraRef} style={styles.camera} zoom={zoom} />
-        <View style={styles.modeRow}>
-          <Pressable
-            style={[styles.modeButton, mode === 'offline' && styles.modeButtonActive]}
-            onPress={() => setMode('offline')}
-          >
-            <Text style={[styles.modeButtonText, mode === 'offline' && styles.modeButtonTextActive]}>
-              오프라인
-            </Text>
+        <Pressable style={styles.settingsButton} onPress={() => setShowModePicker(true)}>
+          <Text style={styles.settingsButtonText}>⚙</Text>
+        </Pressable>
+        <Modal visible={showModePicker} transparent animationType="fade" onRequestClose={() => setShowModePicker(false)}>
+          <Pressable style={styles.modalBackdrop} onPress={() => setShowModePicker(false)}>
+            <View style={styles.modalCard}>
+              <Pressable
+                style={[styles.modeButton, mode === 'offline' && styles.modeButtonActive]}
+                onPress={() => setMode('offline')}
+              >
+                <Text style={[styles.modeButtonText, mode === 'offline' && styles.modeButtonTextActive]}>
+                  오프라인
+                </Text>
+              </Pressable>
+              <Text style={styles.hint}>인터넷 없이 동작, 번역 품질 보통</Text>
+              <Pressable
+                style={[styles.modeButton, mode === 'online' && styles.modeButtonActive]}
+                onPress={() => setMode('online')}
+              >
+                <Text style={[styles.modeButtonText, mode === 'online' && styles.modeButtonTextActive]}>
+                  온라인
+                </Text>
+              </Pressable>
+              <Text style={styles.hint}>인터넷 필요, 번역 품질 더 좋음</Text>
+            </View>
           </Pressable>
-          <Pressable
-            style={[styles.modeButton, mode === 'online' && styles.modeButtonActive]}
-            onPress={() => setMode('online')}
-          >
-            <Text style={[styles.modeButtonText, mode === 'online' && styles.modeButtonTextActive]}>
-              온라인
-            </Text>
-          </Pressable>
-        </View>
-        <Text style={styles.hint}>
-          {mode === 'online' ? '인터넷 필요, 번역 품질 더 좋음' : '인터넷 없이 동작, 번역 품질 보통'}
-        </Text>
+        </Modal>
         <View style={styles.zoomRow}>
           <Pressable
             style={styles.zoomButton}
@@ -170,16 +177,42 @@ const styles = StyleSheet.create({
   text: { fontSize: type.body, textAlign: 'center', padding: 12, color: colors.ink },
   statusText: { fontSize: type.body, textAlign: 'center', padding: 12, color: colors.inkMuted },
   errorText: { color: colors.danger, fontWeight: '600' },
-  modeRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingTop: 10 },
+  settingsButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  settingsButtonText: { color: '#fff', fontSize: 18 },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCard: {
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+    padding: 20,
+    gap: 8,
+    width: 260,
+  },
   modeButton: {
-    paddingVertical: 6,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: radius.sm,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: colors.border,
+    alignItems: 'center',
   },
   modeButtonActive: { backgroundColor: colors.primary },
-  modeButtonText: { color: '#fff', fontSize: type.hint, fontWeight: '600' },
-  modeButtonTextActive: { fontWeight: '700' },
+  modeButtonText: { color: colors.ink, fontSize: type.body, fontWeight: '600' },
+  modeButtonTextActive: { color: '#fff', fontWeight: '700' },
   zoomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 10 },
   zoomButton: {
     width: 44,
