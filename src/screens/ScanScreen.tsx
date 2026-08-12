@@ -3,7 +3,7 @@ import { View, StyleSheet, Pressable, Text, ScrollView, Modal } from 'react-nati
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { recognizeText } from '../lib/ocr';
-import { translate, type TranslateMode } from '../lib/translate';
+import { translateBatch, type TranslateMode } from '../lib/translate';
 import { getPronunciation } from '../lib/pronounce';
 import { fetchSummary } from '../lib/wikipedia';
 import { lookupFoodTerm } from '../lib/food-dictionary';
@@ -53,12 +53,17 @@ export function ScanScreen() {
         return;
       }
 
+      const knownEntries = lines.map((line) => lookupFoodTerm(line.text));
+      const unknownTexts = lines.filter((_, i) => !knownEntries[i]).map((line) => line.text);
+      const translatedList = await translateBatch(unknownTexts, 'ja', 'ko', mode);
+      let unknownIndex = 0;
+      const translatedPerLine = knownEntries.map((known) => (known ? null : translatedList[unknownIndex++]));
+
       const menuItems = await Promise.all(
         lines.map(async (line, index) => {
-          const known = lookupFoodTerm(line.text);
-          const [translated, pronunciation] = known
-            ? [known.translated, known.pronunciation]
-            : await Promise.all([translate(line.text, 'ja', 'ko', mode), getPronunciation(line.text)]);
+          const known = knownEntries[index];
+          const translated = known ? known.translated : (translatedPerLine[index] as string);
+          const pronunciation = known ? known.pronunciation : await getPronunciation(line.text);
           const item: MenuItem = {
             id: `${index}-${line.text}`,
             original: line.text,
