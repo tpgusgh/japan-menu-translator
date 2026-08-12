@@ -6,6 +6,7 @@ export interface NativeTextLine {
   y: number;
   width: number;
   height: number;
+  orientation: 'horizontal' | 'vertical';
 }
 
 const MlFeatures = requireNativeModule('MlFeatures');

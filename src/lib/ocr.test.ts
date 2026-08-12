@@ -8,11 +8,11 @@ import { recognizeText } from './ocr';
 describe('recognizeText', () => {
   it('drops lines with no Japanese characters (UI noise) and pure price lines', async () => {
     (nativeRecognizeText as jest.Mock).mockResolvedValue([
-      { text: '寿司', x: 0, y: 0, width: 10, height: 10 },
-      { text: 'HTTPS', x: 0, y: 0, width: 10, height: 10 },
-      { text: 'fus', x: 0, y: 0, width: 10, height: 10 },
-      { text: '1,000', x: 0, y: 0, width: 10, height: 10 },
-      { text: '天ぷら 800円', x: 0, y: 0, width: 10, height: 10 },
+      { text: '寿司', x: 0, y: 0, width: 10, height: 10, orientation: 'horizontal' as const },
+      { text: 'HTTPS', x: 0, y: 0, width: 10, height: 10, orientation: 'horizontal' as const },
+      { text: 'fus', x: 0, y: 0, width: 10, height: 10, orientation: 'horizontal' as const },
+      { text: '1,000', x: 0, y: 0, width: 10, height: 10, orientation: 'horizontal' as const },
+      { text: '天ぷら 800円', x: 0, y: 0, width: 10, height: 10, orientation: 'horizontal' as const },
     ]);
 
     const result = await recognizeText('file://test.jpg');
@@ -22,9 +22,9 @@ describe('recognizeText', () => {
 
   it('splits a price glued to the name onto its own field', async () => {
     (nativeRecognizeText as jest.Mock).mockResolvedValue([
-      { text: '寿司', x: 0, y: 0, width: 10, height: 10 },
-      { text: '天ぷら 800円', x: 0, y: 0, width: 10, height: 10 },
-      { text: 'ラーメン ￥900', x: 0, y: 0, width: 10, height: 10 },
+      { text: '寿司', x: 0, y: 0, width: 10, height: 10, orientation: 'horizontal' as const },
+      { text: '天ぷら 800円', x: 0, y: 0, width: 10, height: 10, orientation: 'horizontal' as const },
+      { text: 'ラーメン ￥900', x: 0, y: 0, width: 10, height: 10, orientation: 'horizontal' as const },
     ]);
 
     const result = await recognizeText('file://test.jpg');
@@ -34,14 +34,25 @@ describe('recognizeText', () => {
 
   it('drops lines that are mostly Latin garbage even with a stray Japanese-looking glyph', async () => {
     (nativeRecognizeText as jest.Mock).mockResolvedValue([
-      { text: '寿司', x: 0, y: 0, width: 10, height: 10 },
-      { text: 'Pakara Shurhanウ', x: 0, y: 0, width: 10, height: 10 },
-      { text: 'hakatawaア', x: 0, y: 0, width: 10, height: 10 },
-      { text: '◆エリンギ', x: 0, y: 0, width: 10, height: 10 },
+      { text: '寿司', x: 0, y: 0, width: 10, height: 10, orientation: 'horizontal' as const },
+      { text: 'Pakara Shurhanウ', x: 0, y: 0, width: 10, height: 10, orientation: 'horizontal' as const },
+      { text: 'hakatawaア', x: 0, y: 0, width: 10, height: 10, orientation: 'horizontal' as const },
+      { text: '◆エリンギ', x: 0, y: 0, width: 10, height: 10, orientation: 'horizontal' as const },
     ]);
 
     const result = await recognizeText('file://test.jpg');
 
     expect(result.map((line) => line.text)).toEqual(['寿司', '◆エリンギ']);
+  });
+
+  it('passes through the orientation the native side detected', async () => {
+    (nativeRecognizeText as jest.Mock).mockResolvedValue([
+      { text: '寿司', x: 0, y: 0, width: 10, height: 10, orientation: 'horizontal' as const },
+      { text: '揚げ物', x: 0, y: 0, width: 10, height: 10, orientation: 'vertical' as const },
+    ]);
+
+    const result = await recognizeText('file://test.jpg');
+
+    expect(result.map((line) => line.orientation)).toEqual(['horizontal', 'vertical']);
   });
 });

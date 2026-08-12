@@ -70,6 +70,7 @@ export function ScanScreen() {
             translated,
             pronunciation,
             price: line.price,
+            orientation: line.orientation,
             boundingBox: line.boundingBox,
             description: null,
             descriptionState: 'idle',

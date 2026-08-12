@@ -29,6 +29,33 @@ export function PhotoOverlay({ uri, items }: { uri: string; items: MenuItem[] })
         items.map((item) => {
           const boxHeight = item.boundingBox.height * scale;
           const boxWidth = item.boundingBox.width * scale;
+
+          if (item.orientation === 'vertical') {
+            // Original reads top-to-bottom in a narrow column; stack the translation
+            // the same way (one character per line, upright -- Hangul syllable blocks
+            // don't need rotating like Latin would) immediately to its left, matching
+            // right-to-left column order.
+            const charSize = Math.max(8, Math.min(boxWidth * 0.9, 16));
+            return (
+              <View
+                key={item.id}
+                style={[
+                  styles.verticalLabel,
+                  {
+                    left: item.boundingBox.x * scale - charSize * 1.4,
+                    top: item.boundingBox.y * scale,
+                  },
+                ]}
+              >
+                {[...item.translated].map((ch, i) => (
+                  <Text key={i} style={[styles.verticalChar, { fontSize: charSize, lineHeight: charSize * 1.15 }]}>
+                    {ch}
+                  </Text>
+                ))}
+              </View>
+            );
+          }
+
           // ponytail: fixed offset below the original line; dense menus with tight
           // line spacing can still overlap the next line's Japanese text.
           const fontSize = Math.max(8, Math.min(boxHeight * 0.6, 14));
@@ -70,5 +97,18 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
     borderRadius: 3,
     overflow: 'hidden',
+  },
+  verticalLabel: {
+    position: 'absolute',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.82)',
+    paddingHorizontal: 1,
+    paddingVertical: 2,
+    borderRadius: 3,
+  },
+  verticalChar: {
+    color: colors.primary,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });

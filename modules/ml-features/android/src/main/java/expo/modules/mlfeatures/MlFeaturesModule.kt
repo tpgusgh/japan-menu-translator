@@ -48,13 +48,14 @@ class MlFeaturesModule : Module() {
   private fun japaneseCharScore(text: String): Int =
     text.count { c -> c.code in 0x3040..0x30FF || c.code in 0x4E00..0x9FFF }
 
-  private fun blockItem(box: Rect?, text: String, effectiveScale: Float): Map<String, Any?> =
+  private fun blockItem(box: Rect?, text: String, effectiveScale: Float, orientation: String): Map<String, Any?> =
     mapOf(
       "text" to text,
       "x" to ((box?.left ?: 0) / effectiveScale).toInt(),
       "y" to ((box?.top ?: 0) / effectiveScale).toInt(),
       "width" to ((box?.width() ?: 0) / effectiveScale).toInt(),
-      "height" to ((box?.height() ?: 0) / effectiveScale).toInt()
+      "height" to ((box?.height() ?: 0) / effectiveScale).toInt(),
+      "orientation" to orientation
     )
 
   // Maps a bounding box from a 90deg-counterclockwise-rotated bitmap back to the
@@ -106,7 +107,7 @@ class MlFeaturesModule : Module() {
       // dish name that wraps to two lines stays one item instead of being split into
       // two unrelated fragments that each translate to garbage.
       val horizontalItems = result.textBlocks.map { block ->
-        blockItem(block.boundingBox, block.lines.joinToString(" ") { it.text }, effectiveScale)
+        blockItem(block.boundingBox, block.lines.joinToString(" ") { it.text }, effectiveScale, "horizontal")
       }
 
       // ML Kit's recognizer is built for horizontal text; traditional Japanese vertical
@@ -123,7 +124,7 @@ class MlFeaturesModule : Module() {
         val rotatedResult = textRecognizer.process(InputImage.fromBitmap(rotated, 0)).await()
         rotatedResult.textBlocks.map { block ->
           val text = block.lines.joinToString(" ") { it.text }
-          blockItem(unrotateBox(block.boundingBox, preRotate.width), text, effectiveScale)
+          blockItem(unrotateBox(block.boundingBox, preRotate.width), text, effectiveScale, "vertical")
         }
       } ?: emptyList()
 

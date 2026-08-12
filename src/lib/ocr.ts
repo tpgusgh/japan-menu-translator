@@ -32,6 +32,7 @@ export async function recognizeText(imageUri: string): Promise<RecognizedLine[]>
       return {
         text,
         price,
+        orientation: line.orientation,
         boundingBox: { x: line.x, y: line.y, width: line.width, height: line.height },
       };
     });
