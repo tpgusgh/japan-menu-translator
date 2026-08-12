@@ -50,7 +50,17 @@ class MlFeaturesModule : Module() {
       val context = appContext.reactContext!!
       val path = Uri.parse(imageUri).path
       val originalBitmap = path?.let { BitmapFactory.decodeFile(it) }
-      val scaleFactor = 2.5f
+      // Target a consistently high effective resolution for OCR regardless of the
+      // source photo's native size: small/dense menu text needs more pixels than a
+      // photo may already have. Real phone cameras often already exceed this, so this
+      // skips pointless (and memory-risky) upscaling on already-sharp photos while
+      // still boosting low-res ones -- capped at 4x so a tiny/blurry source doesn't
+      // blow up into a huge bitmap for no accuracy gain.
+      val targetLongSide = 4500
+      val scaleFactor = originalBitmap?.let {
+        val longSide = maxOf(it.width, it.height)
+        (targetLongSide.toFloat() / longSide).coerceIn(1f, 4f)
+      } ?: 1f
 
       val (image, effectiveScale) = if (originalBitmap != null) {
         val scaledBitmap = Bitmap.createScaledBitmap(
