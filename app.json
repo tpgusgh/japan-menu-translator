@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "일본 메뉴 번역기",
+    "slug": "japan-menu-translator",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "platforms": ["android"],
+    "android": {
+      "package": "com.example.japanmenutranslator",
+      "permissions": ["CAMERA"]
+    }
+  }
+}
