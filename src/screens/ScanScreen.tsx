@@ -36,7 +36,11 @@ export function ScanScreen() {
     if (!cameraRef.current) return;
 
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 1, skipProcessing: false });
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 1,
+        skipProcessing: false,
+        shutterSound: false,
+      });
       if (!photo) return;
 
       setPhotoUri(photo.uri);
