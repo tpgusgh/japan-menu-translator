@@ -31,4 +31,17 @@ describe('recognizeText', () => {
 
     expect(result.map((line) => line.price)).toEqual([null, '800円', '￥900']);
   });
+
+  it('drops lines that are mostly Latin garbage even with a stray Japanese-looking glyph', async () => {
+    (nativeRecognizeText as jest.Mock).mockResolvedValue([
+      { text: '寿司', x: 0, y: 0, width: 10, height: 10 },
+      { text: 'Pakara Shurhanウ', x: 0, y: 0, width: 10, height: 10 },
+      { text: 'hakatawaア', x: 0, y: 0, width: 10, height: 10 },
+      { text: '◆エリンギ', x: 0, y: 0, width: 10, height: 10 },
+    ]);
+
+    const result = await recognizeText('file://test.jpg');
+
+    expect(result.map((line) => line.text)).toEqual(['寿司', '◆エリンギ']);
+  });
 });
