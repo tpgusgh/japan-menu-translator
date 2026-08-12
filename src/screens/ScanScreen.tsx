@@ -15,6 +15,7 @@ export function ScanScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(0);
   const [items, setItems] = useState<MenuItem[]>([]);
   const [status, setStatus] = useState<Status>('idle');
 
@@ -99,7 +100,13 @@ export function ScanScreen() {
   if (!photoUri) {
     return (
       <View style={styles.container}>
-        <CameraView ref={cameraRef} style={styles.camera} />
+        <CameraView ref={cameraRef} style={styles.camera} zoom={zoom} />
+        <View style={styles.zoomRow}>
+          <Button title="축소 −" onPress={() => setZoom((z) => Math.max(0, z - 0.15))} />
+          <Text style={styles.zoomLabel}>확대: {Math.round(zoom * 100)}%</Text>
+          <Button title="확대 +" onPress={() => setZoom((z) => Math.min(1, z + 0.15))} />
+        </View>
+        <Text style={styles.hint}>글씨가 작게 보이면 확대 후 메뉴 1~2개가 크게 나오도록 가까이서 촬영하세요.</Text>
         <Button title="촬영" onPress={capture} />
       </View>
     );
@@ -122,4 +129,7 @@ const styles = StyleSheet.create({
   camera: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
   text: { fontSize: 16, textAlign: 'center', padding: 12 },
+  zoomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 8, gap: 8 },
+  zoomLabel: { fontSize: 14, color: '#333' },
+  hint: { fontSize: 12, color: '#666', textAlign: 'center', paddingHorizontal: 12, paddingBottom: 4 },
 });
