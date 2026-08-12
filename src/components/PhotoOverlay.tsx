@@ -26,20 +26,36 @@ export function PhotoOverlay({ uri, items }: { uri: string; items: MenuItem[] })
       />
       {naturalSize &&
         displayWidth &&
-        items.map((item, index) => (
-          <View
-            key={item.id}
-            style={[
-              styles.marker,
-              {
-                left: item.boundingBox.x * scale + (item.boundingBox.width * scale) / 2 - 12,
-                top: item.boundingBox.y * scale + (item.boundingBox.height * scale) / 2 - 12,
-              },
-            ]}
-          >
-            <Text style={styles.markerText}>{index + 1}</Text>
-          </View>
-        ))}
+        items.map((item) => {
+          const boxWidth = item.boundingBox.width * scale;
+          const boxHeight = item.boundingBox.height * scale;
+          const fontSize = Math.max(9, Math.min(boxHeight * 0.72, 26));
+
+          return (
+            <View
+              key={item.id}
+              style={[
+                styles.cover,
+                {
+                  left: item.boundingBox.x * scale,
+                  top: item.boundingBox.y * scale,
+                  minWidth: boxWidth,
+                  minHeight: boxHeight,
+                  maxWidth: boxWidth * 1.6,
+                },
+              ]}
+            >
+              <Text
+                style={[styles.coverText, { fontSize, lineHeight: fontSize * 1.15 }]}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.4}
+              >
+                {item.translated}
+              </Text>
+            </View>
+          );
+        })}
     </View>
   );
 }
@@ -47,21 +63,13 @@ export function PhotoOverlay({ uri, items }: { uri: string; items: MenuItem[] })
 const styles = StyleSheet.create({
   wrapper: { width: '100%' },
   image: { width: '100%' },
-  marker: {
+  cover: {
     position: 'absolute',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.primary,
-    borderWidth: 2,
-    borderColor: '#fff',
+    backgroundColor: colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 3,
+    paddingHorizontal: 2,
+    borderRadius: 2,
   },
-  markerText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  coverText: { color: colors.ink, fontWeight: '700', textAlign: 'center' },
 });
