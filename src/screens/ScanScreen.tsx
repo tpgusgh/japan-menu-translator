@@ -6,6 +6,7 @@ import { translate } from '../lib/translate';
 import { getPronunciation } from '../lib/pronounce';
 import { fetchSummary } from '../lib/wikipedia';
 import { PhotoOverlay } from '../components/PhotoOverlay';
+import { KoreanMenuBoard } from '../components/KoreanMenuBoard';
 import { MenuList } from '../components/MenuList';
 import { PrimaryButton } from '../components/PrimaryButton';
 import type { MenuItem } from '../types';
@@ -130,6 +131,7 @@ export function ScanScreen() {
       {status === 'processing' && <Text style={styles.statusText}>분석 중...</Text>}
       {status === 'noText' && <Text style={styles.statusText}>텍스트를 찾지 못했습니다. 다시 촬영해주세요.</Text>}
       {status === 'error' && <Text style={[styles.statusText, styles.errorText]}>처리 중 오류가 발생했습니다. 다시 촬영해주세요.</Text>}
+      <KoreanMenuBoard items={items} />
       <MenuList items={items} onShowDescription={handleShowDescription} />
       <PrimaryButton title="다시 촬영" onPress={reset} variant="secondary" />
     </ScrollView>
