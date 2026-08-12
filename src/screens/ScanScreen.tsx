@@ -6,7 +6,7 @@ import { translate } from '../lib/translate';
 import { getPronunciation } from '../lib/pronounce';
 import type { MenuItem } from '../types';
 
-type Status = 'idle' | 'processing' | 'noText';
+type Status = 'idle' | 'processing' | 'noText' | 'error';
 
 export function ScanScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -29,33 +29,37 @@ export function ScanScreen() {
     setPhotoUri(photo.uri);
     setStatus('processing');
 
-    const lines = await recognizeText(photo.uri);
-    if (lines.length === 0) {
-      setStatus('noText');
-      return;
+    try {
+      const lines = await recognizeText(photo.uri);
+      if (lines.length === 0) {
+        setStatus('noText');
+        return;
+      }
+
+      const menuItems = await Promise.all(
+        lines.map(async (line, index) => {
+          const [translated, pronunciation] = await Promise.all([
+            translate(line.text, 'ja', 'ko'),
+            getPronunciation(line.text),
+          ]);
+          const item: MenuItem = {
+            id: `${index}-${line.text}`,
+            original: line.text,
+            translated,
+            pronunciation,
+            boundingBox: line.boundingBox,
+            description: null,
+            descriptionState: 'idle',
+          };
+          return item;
+        })
+      );
+
+      setItems(menuItems);
+      setStatus('idle');
+    } catch {
+      setStatus('error');
     }
-
-    const menuItems = await Promise.all(
-      lines.map(async (line, index) => {
-        const [translated, pronunciation] = await Promise.all([
-          translate(line.text, 'ja', 'ko'),
-          getPronunciation(line.text),
-        ]);
-        const item: MenuItem = {
-          id: `${index}-${line.text}`,
-          original: line.text,
-          translated,
-          pronunciation,
-          boundingBox: line.boundingBox,
-          description: null,
-          descriptionState: 'idle',
-        };
-        return item;
-      })
-    );
-
-    setItems(menuItems);
-    setStatus('idle');
   }, []);
 
   const updateItem = useCallback((id: string, patch: Partial<MenuItem>) => {
@@ -88,6 +92,7 @@ export function ScanScreen() {
     <ScrollView style={styles.container}>
       {status === 'processing' && <Text style={styles.text}>분석 중...</Text>}
       {status === 'noText' && <Text style={styles.text}>텍스트를 찾지 못했습니다. 다시 촬영해주세요.</Text>}
+      {status === 'error' && <Text style={styles.text}>처리 중 오류가 발생했습니다. 다시 촬영해주세요.</Text>}
       <Text style={styles.text}>인식된 항목: {items.length}개</Text>
       <Button title="다시 촬영" onPress={reset} />
     </ScrollView>
