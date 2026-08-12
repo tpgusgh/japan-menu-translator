@@ -4,6 +4,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { recognizeText } from '../lib/ocr';
 import { translate } from '../lib/translate';
 import { getPronunciation } from '../lib/pronounce';
+import { PhotoOverlay } from '../components/PhotoOverlay';
 import type { MenuItem } from '../types';
 
 type Status = 'idle' | 'processing' | 'noText' | 'error';
@@ -90,6 +91,7 @@ export function ScanScreen() {
 
   return (
     <ScrollView style={styles.container}>
+      <PhotoOverlay uri={photoUri} items={items} />
       {status === 'processing' && <Text style={styles.text}>분석 중...</Text>}
       {status === 'noText' && <Text style={styles.text}>텍스트를 찾지 못했습니다. 다시 촬영해주세요.</Text>}
       {status === 'error' && <Text style={styles.text}>처리 중 오류가 발생했습니다. 다시 촬영해주세요.</Text>}
