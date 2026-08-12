@@ -1,6 +1,12 @@
 package expo.modules.mlfeatures
 
 import android.net.Uri
+import com.google.mlkit.common.model.DownloadConditions
+import com.google.mlkit.common.model.RemoteModelManager
+import com.google.mlkit.nl.translate.TranslateLanguage
+import com.google.mlkit.nl.translate.TranslateRemoteModel
+import com.google.mlkit.nl.translate.Translation
+import com.google.mlkit.nl.translate.TranslatorOptions
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
@@ -9,6 +15,13 @@ import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.tasks.await
 
 class MlFeaturesModule : Module() {
+  private fun langTag(lang: String): String =
+    when (lang) {
+      "ja" -> TranslateLanguage.JAPANESE
+      "ko" -> TranslateLanguage.KOREAN
+      else -> throw IllegalArgumentException("Unsupported language: $lang")
+    }
+
   override fun definition() = ModuleDefinition {
     Name("MlFeatures")
 
@@ -26,6 +39,30 @@ class MlFeaturesModule : Module() {
           "width" to (box?.width() ?: 0),
           "height" to (box?.height() ?: 0)
         )
+      }
+    }
+
+    AsyncFunction("isModelDownloaded").SuspendBody { lang: String ->
+      val model = TranslateRemoteModel.Builder(langTag(lang)).build()
+      RemoteModelManager.getInstance().isModelDownloaded(model).await()
+    }
+
+    AsyncFunction("downloadModel").SuspendBody { lang: String ->
+      val model = TranslateRemoteModel.Builder(langTag(lang)).build()
+      val conditions = DownloadConditions.Builder().build()
+      RemoteModelManager.getInstance().download(model, conditions).await()
+    }
+
+    AsyncFunction("translateText").SuspendBody { text: String, from: String, to: String ->
+      val options = TranslatorOptions.Builder()
+        .setSourceLanguage(langTag(from))
+        .setTargetLanguage(langTag(to))
+        .build()
+      val translator = Translation.getClient(options)
+      try {
+        translator.translate(text).await()
+      } finally {
+        translator.close()
       }
     }
   }

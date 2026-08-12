@@ -13,3 +13,15 @@ const MlFeatures = requireNativeModule('MlFeatures');
 export async function recognizeText(imageUri: string): Promise<NativeTextLine[]> {
   return MlFeatures.recognizeText(imageUri);
 }
+
+export async function isModelDownloaded(lang: 'ja' | 'ko'): Promise<boolean> {
+  return MlFeatures.isModelDownloaded(lang);
+}
+
+export async function downloadModel(lang: 'ja' | 'ko'): Promise<void> {
+  return MlFeatures.downloadModel(lang);
+}
+
+export async function translateText(text: string, from: 'ja' | 'ko', to: 'ja' | 'ko'): Promise<string> {
+  return MlFeatures.translateText(text, from, to);
+}
