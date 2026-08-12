@@ -17,6 +17,18 @@ describe('recognizeText', () => {
 
     const result = await recognizeText('file://test.jpg');
 
-    expect(result.map((line) => line.text)).toEqual(['寿司', '天ぷら 800円']);
+    expect(result.map((line) => line.text)).toEqual(['寿司', '天ぷら']);
+  });
+
+  it('splits a price glued to the name onto its own field', async () => {
+    (nativeRecognizeText as jest.Mock).mockResolvedValue([
+      { text: '寿司', x: 0, y: 0, width: 10, height: 10 },
+      { text: '天ぷら 800円', x: 0, y: 0, width: 10, height: 10 },
+      { text: 'ラーメン ￥900', x: 0, y: 0, width: 10, height: 10 },
+    ]);
+
+    const result = await recognizeText('file://test.jpg');
+
+    expect(result.map((line) => line.price)).toEqual([null, '800円', '￥900']);
   });
 });

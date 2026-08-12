@@ -9,6 +9,7 @@ export type LangCode = 'ja' | 'ko';
 
 export interface RecognizedLine {
   text: string;
+  price: string | null;
   boundingBox: BoundingBox;
 }
 
@@ -17,6 +18,7 @@ export interface MenuItem {
   original: string;
   translated: string;
   pronunciation: string;
+  price: string | null;
   boundingBox: BoundingBox;
   description: string | null;
   descriptionState: 'idle' | 'loading' | 'loaded' | 'unavailable';

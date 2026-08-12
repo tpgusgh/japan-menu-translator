@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { View, StyleSheet, Pressable, Text, ScrollView } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { recognizeText } from '../lib/ocr';
-import { translate } from '../lib/translate';
+import { translate, type TranslateMode } from '../lib/translate';
 import { getPronunciation } from '../lib/pronounce';
 import { fetchSummary } from '../lib/wikipedia';
 import { lookupFoodTerm } from '../lib/food-dictionary';
@@ -22,6 +22,7 @@ export function ScanScreen() {
   const [zoom, setZoom] = useState(0);
   const [items, setItems] = useState<MenuItem[]>([]);
   const [status, setStatus] = useState<Status>('idle');
+  const [mode, setMode] = useState<TranslateMode>('offline');
 
   const reset = useCallback(() => {
     setPhotoUri(null);
@@ -51,12 +52,13 @@ export function ScanScreen() {
           const known = lookupFoodTerm(line.text);
           const [translated, pronunciation] = known
             ? [known.translated, known.pronunciation]
-            : await Promise.all([translate(line.text, 'ja', 'ko'), getPronunciation(line.text)]);
+            : await Promise.all([translate(line.text, 'ja', 'ko', mode), getPronunciation(line.text)]);
           const item: MenuItem = {
             id: `${index}-${line.text}`,
             original: line.text,
             translated,
             pronunciation,
+            price: line.price,
             boundingBox: line.boundingBox,
             description: null,
             descriptionState: 'idle',
@@ -71,7 +73,7 @@ export function ScanScreen() {
       console.warn(e);
       setStatus('error');
     }
-  }, []);
+  }, [mode]);
 
   const updateItem = useCallback((id: string, patch: Partial<MenuItem>) => {
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
@@ -105,6 +107,27 @@ export function ScanScreen() {
     return (
       <View style={styles.container}>
         <CameraView ref={cameraRef} style={styles.camera} zoom={zoom} />
+        <View style={styles.modeRow}>
+          <Pressable
+            style={[styles.modeButton, mode === 'offline' && styles.modeButtonActive]}
+            onPress={() => setMode('offline')}
+          >
+            <Text style={[styles.modeButtonText, mode === 'offline' && styles.modeButtonTextActive]}>
+              오프라인
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.modeButton, mode === 'online' && styles.modeButtonActive]}
+            onPress={() => setMode('online')}
+          >
+            <Text style={[styles.modeButtonText, mode === 'online' && styles.modeButtonTextActive]}>
+              온라인
+            </Text>
+          </Pressable>
+        </View>
+        <Text style={styles.hint}>
+          {mode === 'online' ? '인터넷 필요, 번역 품질 더 좋음' : '인터넷 없이 동작, 번역 품질 보통'}
+        </Text>
         <View style={styles.zoomRow}>
           <Pressable
             style={styles.zoomButton}
@@ -147,6 +170,16 @@ const styles = StyleSheet.create({
   text: { fontSize: type.body, textAlign: 'center', padding: 12, color: colors.ink },
   statusText: { fontSize: type.body, textAlign: 'center', padding: 12, color: colors.inkMuted },
   errorText: { color: colors.danger, fontWeight: '600' },
+  modeRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingTop: 10 },
+  modeButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: radius.sm,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  modeButtonActive: { backgroundColor: colors.primary },
+  modeButtonText: { color: '#fff', fontSize: type.hint, fontWeight: '600' },
+  modeButtonTextActive: { fontWeight: '700' },
   zoomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 10 },
   zoomButton: {
     width: 44,

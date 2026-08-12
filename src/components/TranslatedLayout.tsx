@@ -29,27 +29,48 @@ export function TranslatedLayout({ uri, items }: { uri: string; items: MenuItem[
         items.map((item) => {
           const boxHeight = item.boundingBox.height * scale;
           const boxWidth = item.boundingBox.width * scale;
-          const fontSize = Math.max(9, Math.min(boxHeight * 0.72, 26));
+          const nameSize = Math.max(9, Math.min(boxHeight * 0.55, 22));
+          const subSize = Math.max(7, nameSize * 0.62);
+          const maxWidth = boxWidth * 1.9;
 
           return (
-            <Text
+            <View
               key={item.id}
               style={[
-                styles.label,
-                {
-                  left: item.boundingBox.x * scale,
-                  top: item.boundingBox.y * scale,
-                  maxWidth: boxWidth * 1.7,
-                  fontSize,
-                  lineHeight: fontSize * 1.15,
-                },
+                styles.itemBlock,
+                { left: item.boundingBox.x * scale, top: item.boundingBox.y * scale, maxWidth },
               ]}
-              numberOfLines={2}
-              adjustsFontSizeToFit
-              minimumFontScale={0.4}
             >
-              {item.translated}
-            </Text>
+              <View style={styles.nameRow}>
+                <Text
+                  style={[styles.original, { fontSize: nameSize }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.5}
+                >
+                  {item.original}
+                </Text>
+                {item.price && <Text style={[styles.price, { fontSize: subSize }]}>{item.price}</Text>}
+              </View>
+              <View style={styles.subRow}>
+                <Text
+                  style={[styles.pronunciation, { fontSize: subSize }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.5}
+                >
+                  {item.pronunciation}
+                </Text>
+                <Text
+                  style={[styles.translated, { fontSize: subSize }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.5}
+                >
+                  {item.translated}
+                </Text>
+              </View>
+            </View>
           );
         })}
     </View>
@@ -63,9 +84,34 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  label: {
+  itemBlock: {
     position: 'absolute',
+    gap: 2,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+  },
+  subRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  original: {
     color: colors.ink,
     fontWeight: '700',
+  },
+  price: {
+    color: colors.inkMuted,
+    fontWeight: '600',
+  },
+  pronunciation: {
+    color: colors.pronunciation,
+    fontWeight: '600',
+  },
+  translated: {
+    color: colors.primary,
+    fontWeight: '700',
+    flexShrink: 1,
   },
 });

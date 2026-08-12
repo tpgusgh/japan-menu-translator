@@ -18,6 +18,7 @@ export function MenuItemCard({
           <Text style={styles.badgeText}>{index + 1}</Text>
         </View>
         <Text style={styles.original}>{item.original}</Text>
+        {item.price && <Text style={styles.price}>{item.price}</Text>}
       </View>
       <Text style={styles.translated}>{item.translated}</Text>
       <Text style={styles.pronunciation}>{item.pronunciation}</Text>
@@ -47,6 +48,7 @@ const styles = StyleSheet.create({
     ...shadow,
   },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 2 },
+  price: { fontSize: type.hint, color: colors.inkMuted, fontWeight: '600', marginLeft: 'auto' },
   badge: {
     width: 22,
     height: 22,
