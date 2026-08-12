@@ -65,10 +65,14 @@ class MlFeaturesModule : Module() {
       }
 
       val result = textRecognizer.process(image).await()
-      result.textBlocks.flatMap { block -> block.lines }.map { line ->
-        val box = line.boundingBox
+      // Group by ML Kit's own block (paragraph) instead of individual lines, so a
+      // dish name that wraps to two lines stays one item instead of being split into
+      // two unrelated fragments that each translate to garbage.
+      result.textBlocks.map { block ->
+        val box = block.boundingBox
+        val text = block.lines.joinToString(" ") { it.text }
         mapOf(
-          "text" to line.text,
+          "text" to text,
           "x" to ((box?.left ?: 0) / effectiveScale).toInt(),
           "y" to ((box?.top ?: 0) / effectiveScale).toInt(),
           "width" to ((box?.width() ?: 0) / effectiveScale).toInt(),
