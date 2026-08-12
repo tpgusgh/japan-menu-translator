@@ -1,12 +1,13 @@
 import { useState, useRef, useCallback } from 'react';
-import { View, StyleSheet, Pressable, Text, ScrollView, Modal } from 'react-native';
+import { View, StyleSheet, Pressable, Text, ScrollView, Modal, Image } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { recognizeText } from '../lib/ocr';
-import { translateBatch, type TranslateMode } from '../lib/translate';
+import { translateBatch } from '../lib/translate';
 import { getPronunciation } from '../lib/pronounce';
 import { fetchSummary } from '../lib/wikipedia';
 import { lookupFoodTerm } from '../lib/food-dictionary';
+import { refineTranslationsWithAI, generateTranslatedMenuImage } from '../lib/openai';
 import { PhotoOverlay } from '../components/PhotoOverlay';
 import { MenuList } from '../components/MenuList';
 import { PrimaryButton } from '../components/PrimaryButton';
@@ -14,6 +15,21 @@ import type { MenuItem } from '../types';
 import { colors, type, radius } from '../theme';
 
 type Status = 'idle' | 'processing' | 'noText' | 'error';
+type ScanMode = 'offline' | 'online' | 'ai-translate' | 'ai-generate';
+
+const MODE_LABELS: Record<ScanMode, string> = {
+  offline: '오프라인',
+  online: '온라인',
+  'ai-translate': 'AI 번역모드',
+  'ai-generate': 'AI 창작모드',
+};
+
+const MODE_HINTS: Record<ScanMode, string> = {
+  offline: '인터넷 없이 동작, 번역 품질 보통',
+  online: '인터넷 필요, 번역 품질 더 좋음',
+  'ai-translate': 'OpenAI로 읽기/번역 보정, 위치는 기존 방식 그대로 (유료, 인터넷 필요)',
+  'ai-generate': 'OpenAI가 번역된 메뉴판 이미지를 통째로 새로 생성 (유료, 인터넷 필요, 느림)',
+};
 
 export function ScanScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -21,71 +37,105 @@ export function ScanScreen() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [zoom, setZoom] = useState(0);
   const [items, setItems] = useState<MenuItem[]>([]);
+  const [generatedImageUri, setGeneratedImageUri] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>('idle');
-  const [mode, setMode] = useState<TranslateMode>('offline');
+  const [mode, setMode] = useState<ScanMode>('offline');
   const [showModePicker, setShowModePicker] = useState(false);
   const insets = useSafeAreaInsets();
 
   const reset = useCallback(() => {
     setPhotoUri(null);
     setItems([]);
+    setGeneratedImageUri(null);
     setStatus('idle');
   }, []);
 
+  const runPipeline = useCallback(
+    async (uri: string) => {
+      try {
+        setPhotoUri(uri);
+        setItems([]);
+        setGeneratedImageUri(null);
+        setStatus('processing');
+
+        if (mode === 'ai-generate') {
+          const generated = await generateTranslatedMenuImage(uri);
+          setGeneratedImageUri(generated);
+          setStatus('idle');
+          return;
+        }
+
+        const lines = await recognizeText(uri);
+        if (lines.length === 0) {
+          setStatus('noText');
+          return;
+        }
+
+        let menuItems: MenuItem[];
+
+        if (mode === 'ai-translate') {
+          const aiItems = await refineTranslationsWithAI(uri, lines.map((line) => line.text));
+          menuItems = lines.map((line, index) => {
+            const ai = aiItems[index];
+            return {
+              id: `${index}-${line.text}`,
+              original: ai?.original ?? line.text,
+              translated: ai?.translated ?? '',
+              pronunciation: ai?.pronunciation ?? '',
+              price: ai?.price ?? line.price,
+              orientation: line.orientation,
+              boundingBox: line.boundingBox,
+              description: null,
+              descriptionState: 'idle',
+            };
+          });
+        } else {
+          const knownEntries = lines.map((line) => lookupFoodTerm(line.text));
+          const unknownTexts = lines.filter((_, i) => !knownEntries[i]).map((line) => line.text);
+          const translatedList = await translateBatch(unknownTexts, 'ja', 'ko', mode);
+          let unknownIndex = 0;
+          const translatedPerLine = knownEntries.map((known) => (known ? null : translatedList[unknownIndex++]));
+
+          menuItems = await Promise.all(
+            lines.map(async (line, index) => {
+              const known = knownEntries[index];
+              const translated = known ? known.translated : (translatedPerLine[index] as string);
+              const pronunciation = known ? known.pronunciation : await getPronunciation(line.text);
+              return {
+                id: `${index}-${line.text}`,
+                original: line.text,
+                translated,
+                pronunciation,
+                price: line.price,
+                orientation: line.orientation,
+                boundingBox: line.boundingBox,
+                description: null,
+                descriptionState: 'idle',
+              };
+            })
+          );
+        }
+
+        setItems(menuItems);
+        setStatus('idle');
+      } catch (e) {
+        console.warn(e);
+        setStatus('error');
+      }
+    },
+    [mode]
+  );
+
   const capture = useCallback(async () => {
     if (!cameraRef.current) return;
-
-    try {
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: 1,
-        skipProcessing: false,
-        shutterSound: false,
-      });
-      if (!photo) return;
-
-      setPhotoUri(photo.uri);
-      setItems([]);
-      setStatus('processing');
-
-      const lines = await recognizeText(photo.uri);
-      if (lines.length === 0) {
-        setStatus('noText');
-        return;
-      }
-
-      const knownEntries = lines.map((line) => lookupFoodTerm(line.text));
-      const unknownTexts = lines.filter((_, i) => !knownEntries[i]).map((line) => line.text);
-      const translatedList = await translateBatch(unknownTexts, 'ja', 'ko', mode);
-      let unknownIndex = 0;
-      const translatedPerLine = knownEntries.map((known) => (known ? null : translatedList[unknownIndex++]));
-
-      const menuItems = await Promise.all(
-        lines.map(async (line, index) => {
-          const known = knownEntries[index];
-          const translated = known ? known.translated : (translatedPerLine[index] as string);
-          const pronunciation = known ? known.pronunciation : await getPronunciation(line.text);
-          const item: MenuItem = {
-            id: `${index}-${line.text}`,
-            original: line.text,
-            translated,
-            pronunciation,
-            price: line.price,
-            orientation: line.orientation,
-            boundingBox: line.boundingBox,
-            description: null,
-            descriptionState: 'idle',
-          };
-          return item;
-        })
-      );
-
-      setItems(menuItems);
-      setStatus('idle');
-    } catch (e) {
-      console.warn(e);
-      setStatus('error');
-    }
-  }, [mode]);
+    const photo = await cameraRef.current.takePictureAsync({
+      quality: 1,
+      skipProcessing: false,
+      shutterSound: false,
+    });
+    if (!photo) return;
+    await runPipeline(photo.uri);
+  }, [runPipeline]);
 
   const updateItem = useCallback((id: string, patch: Partial<MenuItem>) => {
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
@@ -128,30 +178,22 @@ export function ScanScreen() {
         <Modal visible={showModePicker} transparent animationType="fade" onRequestClose={() => setShowModePicker(false)}>
           <Pressable style={styles.modalBackdrop} onPress={() => setShowModePicker(false)}>
             <View style={styles.modalCard}>
-              <Pressable
-                style={[styles.modeButton, mode === 'offline' && styles.modeButtonActive]}
-                onPress={() => {
-                  setMode('offline');
-                  setShowModePicker(false);
-                }}
-              >
-                <Text style={[styles.modeButtonText, mode === 'offline' && styles.modeButtonTextActive]}>
-                  오프라인
-                </Text>
-              </Pressable>
-              <Text style={styles.hint}>인터넷 없이 동작, 번역 품질 보통</Text>
-              <Pressable
-                style={[styles.modeButton, mode === 'online' && styles.modeButtonActive]}
-                onPress={() => {
-                  setMode('online');
-                  setShowModePicker(false);
-                }}
-              >
-                <Text style={[styles.modeButtonText, mode === 'online' && styles.modeButtonTextActive]}>
-                  온라인
-                </Text>
-              </Pressable>
-              <Text style={styles.hint}>인터넷 필요, 번역 품질 더 좋음</Text>
+              {(Object.keys(MODE_LABELS) as ScanMode[]).map((m) => (
+                <View key={m}>
+                  <Pressable
+                    style={[styles.modeButton, mode === m && styles.modeButtonActive]}
+                    onPress={() => {
+                      setMode(m);
+                      setShowModePicker(false);
+                    }}
+                  >
+                    <Text style={[styles.modeButtonText, mode === m && styles.modeButtonTextActive]}>
+                      {MODE_LABELS[m]}
+                    </Text>
+                  </Pressable>
+                  <Text style={styles.hint}>{MODE_HINTS[m]}</Text>
+                </View>
+              ))}
             </View>
           </Pressable>
         </Modal>
@@ -181,12 +223,20 @@ export function ScanScreen() {
       <View style={[styles.resultHeader, { paddingTop: insets.top + 12 }]}>
         <PrimaryButton title="다시 찍기" onPress={reset} variant="secondary" />
       </View>
-      {status === 'processing' && <Text style={styles.statusText}>분석 중...</Text>}
+      {status === 'processing' && (
+        <Text style={styles.statusText}>{mode === 'ai-generate' ? '이미지 생성 중... (시간 좀 걸림)' : '분석 중...'}</Text>
+      )}
       {status === 'noText' && <Text style={styles.statusText}>텍스트를 찾지 못했습니다. 다시 찍어주세요.</Text>}
       {status === 'error' && <Text style={[styles.statusText, styles.errorText]}>처리 중 오류가 발생했습니다. 다시 찍어주세요.</Text>}
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {items.length > 0 && <PhotoOverlay uri={photoUri} items={items} />}
-        <MenuList items={items} onShowDescription={handleShowDescription} />
+        {mode === 'ai-generate' ? (
+          generatedImageUri && <Image source={{ uri: generatedImageUri }} style={styles.generatedImage} resizeMode="contain" />
+        ) : (
+          <>
+            {items.length > 0 && <PhotoOverlay uri={photoUri} items={items} />}
+            <MenuList items={items} onShowDescription={handleShowDescription} />
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -210,6 +260,7 @@ const styles = StyleSheet.create({
   text: { fontSize: type.body, textAlign: 'center', padding: 12, color: colors.ink },
   statusText: { fontSize: type.body, textAlign: 'center', padding: 12, color: colors.inkMuted },
   errorText: { color: colors.danger, fontWeight: '600' },
+  generatedImage: { width: '100%', aspectRatio: 2 / 3 },
   settingsButton: {
     position: 'absolute',
     top: 12,
@@ -234,7 +285,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: 20,
     gap: 8,
-    width: 260,
+    width: 280,
   },
   modeButton: {
     paddingVertical: 10,
