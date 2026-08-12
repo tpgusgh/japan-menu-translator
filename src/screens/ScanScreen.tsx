@@ -7,6 +7,7 @@ import { translate, type TranslateMode } from '../lib/translate';
 import { getPronunciation } from '../lib/pronounce';
 import { fetchSummary } from '../lib/wikipedia';
 import { lookupFoodTerm } from '../lib/food-dictionary';
+import { PhotoOverlay } from '../components/PhotoOverlay';
 import { MenuList } from '../components/MenuList';
 import { PrimaryButton } from '../components/PrimaryButton';
 import type { MenuItem } from '../types';
@@ -174,6 +175,7 @@ export function ScanScreen() {
       {status === 'noText' && <Text style={styles.statusText}>텍스트를 찾지 못했습니다. 다시 찍어주세요.</Text>}
       {status === 'error' && <Text style={[styles.statusText, styles.errorText]}>처리 중 오류가 발생했습니다. 다시 찍어주세요.</Text>}
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        {items.length > 0 && <PhotoOverlay uri={photoUri} items={items} />}
         <MenuList items={items} onShowDescription={handleShowDescription} />
       </ScrollView>
     </View>
