@@ -20,7 +20,8 @@ export function DownloadScreen({ onReady }: { onReady: () => void }) {
       await Promise.all([downloadModel('ja'), downloadModel('ko')]);
       setStatus('ready');
       onReady();
-    } catch {
+    } catch (e) {
+      console.warn(e);
       setStatus('error');
     }
   }, [onReady]);

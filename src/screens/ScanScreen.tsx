@@ -26,13 +26,15 @@ export function ScanScreen() {
 
   const capture = useCallback(async () => {
     if (!cameraRef.current) return;
-    const photo = await cameraRef.current.takePictureAsync();
-    if (!photo) return;
-
-    setPhotoUri(photo.uri);
-    setStatus('processing');
 
     try {
+      const photo = await cameraRef.current.takePictureAsync();
+      if (!photo) return;
+
+      setPhotoUri(photo.uri);
+      setItems([]);
+      setStatus('processing');
+
       const lines = await recognizeText(photo.uri);
       if (lines.length === 0) {
         setStatus('noText');
@@ -60,7 +62,8 @@ export function ScanScreen() {
 
       setItems(menuItems);
       setStatus('idle');
-    } catch {
+    } catch (e) {
+      console.warn(e);
       setStatus('error');
     }
   }, []);

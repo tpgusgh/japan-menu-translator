@@ -20,4 +20,11 @@ describe('getPronunciation', () => {
     const result = await getPronunciation('本です');
     expect(result).toBe('혼데스');
   });
+
+  it('kuromoji가 읽기를 "*"로 반환하면 원문(surface)으로 대체하고 별표를 남기지 않는다', async () => {
+    (getReadings as jest.Mock).mockResolvedValue([{ surface: '400', reading: '*' }]);
+    const result = await getPronunciation('400');
+    expect(result).toBe('400');
+    expect(result).not.toContain('*');
+  });
 });

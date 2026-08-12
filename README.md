@@ -6,6 +6,10 @@
 
 Expo Go 앱으로는 실행 불가 (ML Kit 네이티브 모듈 필요). 아래 순서로 실행:
 
+> `expo prebuild` 직후 `npx expo run:android`가 실패한다면, 먼저 아래
+> [빌드 문제 해결](#빌드-문제-해결) 절의 두 가지 `android/gradle.properties` 수정을
+> 적용해야 한다.
+
 ```bash
 npm install
 npx expo prebuild -p android
@@ -17,11 +21,12 @@ npx expo run:android
 ### 빌드 문제 해결
 
 `android/` 디렉터리는 `.gitignore`에 포함되어 있고 `expo prebuild`를 실행할 때마다
-새로 생성된다. 이 프로젝트를 macOS에서 빌드할 때 아래 두 가지 문제가 재현되므로,
-매번 `expo prebuild` 이후 `android/gradle.properties`에 두 줄을 추가해야 한다.
+새로 생성된다. 아래 두 가지 문제가 재현되므로, 매번 `expo prebuild` 이후
+`android/gradle.properties`에 두 줄을 추가해야 한다.
 
-1. **시스템 JDK와의 호환성 문제**: 최신 시스템 Java(예: OpenJDK 25)는 이 프로젝트의
-   Gradle/AGP 버전과 호환되지 않는다. JDK 17을 설치하고 Gradle이 그 JDK를 쓰도록 고정한다.
+1. **시스템 JDK와의 호환성 문제**: 시스템 기본 Java가 OpenJDK 25일 때 이 프로젝트의
+   Gradle/AGP 버전과 호환되지 않는다 (OS와 무관하게 시스템 기본 JDK가 25인 환경이면
+   재현된다 — macOS 한정 문제가 아니다). JDK 17을 설치하고 Gradle이 그 JDK를 쓰도록 고정한다.
 
    ```bash
    brew install openjdk@17

@@ -26,4 +26,8 @@ describe('kanaToHangul', () => {
   it('끝의 ん을 앞 음절 받침(ㄴ)으로 붙인다', () => {
     expect(kanaToHangul('ほん')).toBe('혼');
   });
+
+  it('작은 카나 결합(ふぇ 등)으로 만들어지는 외래어 표기(パフェ)를 변환한다', () => {
+    expect(kanaToHangul('パフェ')).toBe('파페');
+  });
 });

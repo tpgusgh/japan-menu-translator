@@ -17,6 +17,22 @@ import kotlinx.coroutines.tasks.await
 
 class MlFeaturesModule : Module() {
   private val kuromojiTokenizer by lazy { Tokenizer() }
+  private val textRecognizer by lazy {
+    TextRecognition.getClient(JapaneseTextRecognizerOptions.Builder().build())
+  }
+  private val translators = mutableMapOf<String, com.google.mlkit.nl.translate.Translator>()
+
+  private fun getOrCreateTranslator(from: String, to: String): com.google.mlkit.nl.translate.Translator {
+    val key = "$from>$to"
+    return translators.getOrPut(key) {
+      Translation.getClient(
+        TranslatorOptions.Builder()
+          .setSourceLanguage(langTag(from))
+          .setTargetLanguage(langTag(to))
+          .build()
+      )
+    }
+  }
 
   private fun langTag(lang: String): String =
     when (lang) {
@@ -31,8 +47,7 @@ class MlFeaturesModule : Module() {
     AsyncFunction("recognizeText").SuspendBody { imageUri: String ->
       val context = appContext.reactContext!!
       val image = InputImage.fromFilePath(context, Uri.parse(imageUri))
-      val recognizer = TextRecognition.getClient(JapaneseTextRecognizerOptions.Builder().build())
-      val result = recognizer.process(image).await()
+      val result = textRecognizer.process(image).await()
       result.textBlocks.flatMap { block -> block.lines }.map { line ->
         val box = line.boundingBox
         mapOf(
@@ -57,25 +72,23 @@ class MlFeaturesModule : Module() {
     }
 
     AsyncFunction("translateText").SuspendBody { text: String, from: String, to: String ->
-      val options = TranslatorOptions.Builder()
-        .setSourceLanguage(langTag(from))
-        .setTargetLanguage(langTag(to))
-        .build()
-      val translator = Translation.getClient(options)
-      try {
-        translator.translate(text).await()
-      } finally {
-        translator.close()
-      }
+      val translator = getOrCreateTranslator(from, to)
+      translator.translate(text).await()
     }
 
     AsyncFunction("getReadings") { text: String ->
       kuromojiTokenizer.tokenize(text).map { token ->
+        val reading = token.reading
         mapOf(
           "surface" to token.surface,
-          "reading" to (token.reading ?: token.surface)
+          "reading" to (if (reading.isNullOrEmpty() || reading == "*") token.surface else reading)
         )
       }
+    }
+
+    OnDestroy {
+      textRecognizer.close()
+      translators.values.forEach { it.close() }
     }
   }
 }

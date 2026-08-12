@@ -4,5 +4,7 @@ import { kanaToHangul } from './kana-to-hangul';
 export async function getPronunciation(japaneseText: string): Promise<string> {
   if (!japaneseText.trim()) return '';
   const tokens = await getReadings(japaneseText);
-  return tokens.map((token) => kanaToHangul(token.reading)).join('');
+  return tokens
+    .map((token) => kanaToHangul(!token.reading || token.reading === '*' ? token.surface : token.reading))
+    .join('');
 }

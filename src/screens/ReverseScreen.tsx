@@ -17,7 +17,8 @@ export function ReverseScreen() {
       const translated = await translate(input, 'ko', 'ja');
       const pronunciation = await getPronunciation(translated);
       setResult({ translated, pronunciation });
-    } catch {
+    } catch (e) {
+      console.warn(e);
       setError(true);
     } finally {
       setLoading(false);

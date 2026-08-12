@@ -6,7 +6,8 @@ export async function fetchSummary(term: string): Promise<string | null> {
     if (!response.ok) return null;
     const data = await response.json();
     return typeof data.extract === 'string' && data.extract.length > 0 ? data.extract : null;
-  } catch {
+  } catch (e) {
+    console.warn(e);
     return null;
   }
 }
