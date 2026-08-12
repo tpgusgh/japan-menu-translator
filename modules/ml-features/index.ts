@@ -25,3 +25,12 @@ export async function downloadModel(lang: 'ja' | 'ko'): Promise<void> {
 export async function translateText(text: string, from: 'ja' | 'ko', to: 'ja' | 'ko'): Promise<string> {
   return MlFeatures.translateText(text, from, to);
 }
+
+export interface NativeReadingToken {
+  surface: string;
+  reading: string;
+}
+
+export async function getReadings(text: string): Promise<NativeReadingToken[]> {
+  return MlFeatures.getReadings(text);
+}

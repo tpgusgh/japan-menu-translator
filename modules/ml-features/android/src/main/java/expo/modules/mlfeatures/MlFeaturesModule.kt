@@ -1,6 +1,7 @@
 package expo.modules.mlfeatures
 
 import android.net.Uri
+import com.atilika.kuromoji.ipadic.Tokenizer
 import com.google.mlkit.common.model.DownloadConditions
 import com.google.mlkit.common.model.RemoteModelManager
 import com.google.mlkit.nl.translate.TranslateLanguage
@@ -15,6 +16,8 @@ import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.tasks.await
 
 class MlFeaturesModule : Module() {
+  private val kuromojiTokenizer by lazy { Tokenizer() }
+
   private fun langTag(lang: String): String =
     when (lang) {
       "ja" -> TranslateLanguage.JAPANESE
@@ -63,6 +66,15 @@ class MlFeaturesModule : Module() {
         translator.translate(text).await()
       } finally {
         translator.close()
+      }
+    }
+
+    AsyncFunction("getReadings") { text: String ->
+      kuromojiTokenizer.tokenize(text).map { token ->
+        mapOf(
+          "surface" to token.surface,
+          "reading" to (token.reading ?: token.surface)
+        )
       }
     }
   }
