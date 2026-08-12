@@ -22,7 +22,7 @@ export function MenuItemCard({
       {item.descriptionState === 'loading' && <Text style={styles.desc}>불러오는 중...</Text>}
       {item.descriptionState === 'loaded' && <Text style={styles.desc}>{item.description}</Text>}
       {item.descriptionState === 'unavailable' && (
-        <Text style={styles.desc}>오프라인 상태이거나 설명을 찾을 수 없습니다.</Text>
+        <Text style={styles.desc}>설명을 찾을 수 없습니다. (오프라인이거나 관련 항목 없음)</Text>
       )}
     </View>
   );
