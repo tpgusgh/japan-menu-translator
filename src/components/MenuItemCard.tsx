@@ -4,14 +4,21 @@ import { colors, type, radius } from '../theme';
 
 export function MenuItemCard({
   item,
+  index,
   onShowDescription,
 }: {
   item: MenuItem;
+  index: number;
   onShowDescription: (id: string) => void;
 }) {
   return (
     <View style={styles.card}>
-      <Text style={styles.original}>{item.original}</Text>
+      <View style={styles.headerRow}>
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{index + 1}</Text>
+        </View>
+        <Text style={styles.original}>{item.original}</Text>
+      </View>
       <Text style={styles.translated}>{item.translated}</Text>
       <Text style={styles.pronunciation}>{item.pronunciation}</Text>
 
@@ -40,6 +47,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  badge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   original: { fontSize: type.hint, textDecorationLine: 'line-through', color: colors.original },
   translated: { fontSize: type.translated, fontWeight: '700', color: colors.ink },
   pronunciation: { fontSize: type.body, color: colors.pronunciation, fontWeight: '600' },

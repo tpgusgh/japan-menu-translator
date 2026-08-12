@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Image, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
 import type { MenuItem } from '../types';
-import { colors, radius } from '../theme';
+import { colors } from '../theme';
 
 export function PhotoOverlay({ uri, items }: { uri: string; items: MenuItem[] }) {
   const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
@@ -26,21 +26,18 @@ export function PhotoOverlay({ uri, items }: { uri: string; items: MenuItem[] })
       />
       {naturalSize &&
         displayWidth &&
-        items.map((item) => (
+        items.map((item, index) => (
           <View
             key={item.id}
             style={[
-              styles.bubble,
+              styles.marker,
               {
-                left: item.boundingBox.x * scale,
-                top: item.boundingBox.y * scale,
-                maxWidth: item.boundingBox.width * scale + 40,
+                left: item.boundingBox.x * scale + (item.boundingBox.width * scale) / 2 - 12,
+                top: item.boundingBox.y * scale + (item.boundingBox.height * scale) / 2 - 12,
               },
             ]}
           >
-            <Text style={styles.original}>{item.original}</Text>
-            <Text style={styles.translated}>{item.translated}</Text>
-            <Text style={styles.pronunciation}>{item.pronunciation}</Text>
+            <Text style={styles.markerText}>{index + 1}</Text>
           </View>
         ))}
     </View>
@@ -50,21 +47,21 @@ export function PhotoOverlay({ uri, items }: { uri: string; items: MenuItem[] })
 const styles = StyleSheet.create({
   wrapper: { width: '100%' },
   image: { width: '100%' },
-  bubble: {
+  marker: {
     position: 'absolute',
-    backgroundColor: 'rgba(255,255,255,0.96)',
-    borderRadius: radius.sm,
-    paddingVertical: 3,
-    paddingHorizontal: 6,
-    borderWidth: 1,
-    borderColor: colors.border,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+    borderWidth: 2,
+    borderColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
     shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
+    elevation: 3,
   },
-  original: { fontSize: 10, textDecorationLine: 'line-through', color: colors.original },
-  translated: { fontSize: 14, fontWeight: '700', color: colors.ink },
-  pronunciation: { fontSize: 11, color: colors.pronunciation, fontWeight: '600' },
+  markerText: { color: '#fff', fontSize: 12, fontWeight: '700' },
 });

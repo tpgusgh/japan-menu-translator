@@ -11,8 +11,8 @@ export function MenuList({
 }) {
   return (
     <View>
-      {items.map((item) => (
-        <MenuItemCard key={item.id} item={item} onShowDescription={onShowDescription} />
+      {items.map((item, index) => (
+        <MenuItemCard key={item.id} item={item} index={index} onShowDescription={onShowDescription} />
       ))}
     </View>
   );
