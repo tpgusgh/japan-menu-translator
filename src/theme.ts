@@ -1,15 +1,15 @@
 export const colors = {
-  bg: '#FAFAF7',
+  bg: '#FAF6EF',
   card: '#FFFFFF',
-  border: '#E7E2D8',
-  ink: '#1C1C1E',
-  inkMuted: '#8A857A',
-  original: '#A39C8C',
-  pronunciation: '#D0472A',
-  primary: '#0F6E5C',
+  border: '#F0E4D3',
+  ink: '#241F19',
+  inkMuted: '#948B7D',
+  original: '#B3A996',
+  pronunciation: '#2B6CB0',
+  primary: '#D6402F',
   primaryText: '#FFFFFF',
-  danger: '#C0392B',
-  chip: '#F0EBE0',
+  danger: '#B3261E',
+  chip: '#FBEAE6',
 };
 
 export const type = {
@@ -20,7 +20,15 @@ export const type = {
 };
 
 export const radius = {
-  sm: 8,
-  md: 14,
-  lg: 20,
+  sm: 10,
+  md: 16,
+  lg: 22,
+};
+
+export const shadow = {
+  shadowColor: '#000',
+  shadowOpacity: 0.08,
+  shadowRadius: 8,
+  shadowOffset: { width: 0, height: 3 },
+  elevation: 3,
 };

@@ -3,7 +3,7 @@ import { View, TextInput, Text, StyleSheet } from 'react-native';
 import { translate } from '../lib/translate';
 import { getPronunciation } from '../lib/pronounce';
 import { PrimaryButton } from '../components/PrimaryButton';
-import { colors, type, radius } from '../theme';
+import { colors, type, radius, shadow } from '../theme';
 
 export function ReverseScreen() {
   const [input, setInput] = useState('');
@@ -62,12 +62,11 @@ const styles = StyleSheet.create({
   },
   result: {
     marginTop: 20,
-    gap: 6,
+    gap: 8,
     backgroundColor: colors.card,
     borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 18,
+    padding: 20,
+    ...shadow,
   },
   japanese: { fontSize: type.japanese, fontWeight: '700', color: colors.ink },
   pronunciation: { fontSize: type.translated, color: colors.pronunciation, fontWeight: '600' },

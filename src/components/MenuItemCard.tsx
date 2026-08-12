@@ -1,6 +1,6 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import type { MenuItem } from '../types';
-import { colors, type, radius } from '../theme';
+import { colors, type, radius, shadow } from '../theme';
 
 export function MenuItemCard({
   item,
@@ -40,14 +40,13 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.card,
     borderRadius: radius.md,
-    padding: 16,
-    marginHorizontal: 12,
-    marginVertical: 6,
-    gap: 4,
-    borderWidth: 1,
-    borderColor: colors.border,
+    padding: 18,
+    marginHorizontal: 14,
+    marginVertical: 8,
+    gap: 6,
+    ...shadow,
   },
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 2 },
   badge: {
     width: 22,
     height: 22,
