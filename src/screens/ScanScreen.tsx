@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { View, StyleSheet, Pressable, Text, ScrollView, Modal } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { recognizeText } from '../lib/ocr';
 import { translate, type TranslateMode } from '../lib/translate';
 import { getPronunciation } from '../lib/pronounce';
@@ -22,6 +23,7 @@ export function ScanScreen() {
   const [status, setStatus] = useState<Status>('idle');
   const [mode, setMode] = useState<TranslateMode>('offline');
   const [showModePicker, setShowModePicker] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const reset = useCallback(() => {
     setPhotoUri(null);
@@ -106,7 +108,10 @@ export function ScanScreen() {
     return (
       <View style={styles.container}>
         <CameraView ref={cameraRef} style={styles.camera} zoom={zoom} />
-        <Pressable style={styles.settingsButton} onPress={() => setShowModePicker(true)}>
+        <Pressable
+          style={[styles.settingsButton, { top: insets.top + 12 }]}
+          onPress={() => setShowModePicker(true)}
+        >
           <Text style={styles.settingsButtonText}>⚙</Text>
         </Pressable>
         <Modal visible={showModePicker} transparent animationType="fade" onRequestClose={() => setShowModePicker(false)}>
@@ -114,7 +119,10 @@ export function ScanScreen() {
             <View style={styles.modalCard}>
               <Pressable
                 style={[styles.modeButton, mode === 'offline' && styles.modeButtonActive]}
-                onPress={() => setMode('offline')}
+                onPress={() => {
+                  setMode('offline');
+                  setShowModePicker(false);
+                }}
               >
                 <Text style={[styles.modeButtonText, mode === 'offline' && styles.modeButtonTextActive]}>
                   오프라인
@@ -123,7 +131,10 @@ export function ScanScreen() {
               <Text style={styles.hint}>인터넷 없이 동작, 번역 품질 보통</Text>
               <Pressable
                 style={[styles.modeButton, mode === 'online' && styles.modeButtonActive]}
-                onPress={() => setMode('online')}
+                onPress={() => {
+                  setMode('online');
+                  setShowModePicker(false);
+                }}
               >
                 <Text style={[styles.modeButtonText, mode === 'online' && styles.modeButtonTextActive]}>
                   온라인
@@ -156,12 +167,12 @@ export function ScanScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.resultHeader}>
+      <View style={[styles.resultHeader, { paddingTop: insets.top + 12 }]}>
         <PrimaryButton title="다시 찍기" onPress={reset} variant="secondary" />
       </View>
       {status === 'processing' && <Text style={styles.statusText}>분석 중...</Text>}
-      {status === 'noText' && <Text style={styles.statusText}>텍스트를 찾지 못했습니다. 다시 촬영해주세요.</Text>}
-      {status === 'error' && <Text style={[styles.statusText, styles.errorText]}>처리 중 오류가 발생했습니다. 다시 촬영해주세요.</Text>}
+      {status === 'noText' && <Text style={styles.statusText}>텍스트를 찾지 못했습니다. 다시 찍어주세요.</Text>}
+      {status === 'error' && <Text style={[styles.statusText, styles.errorText]}>처리 중 오류가 발생했습니다. 다시 찍어주세요.</Text>}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <MenuList items={items} onShowDescription={handleShowDescription} />
       </ScrollView>
@@ -174,7 +185,9 @@ const styles = StyleSheet.create({
   resultHeader: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    paddingTop: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     backgroundColor: colors.card,
