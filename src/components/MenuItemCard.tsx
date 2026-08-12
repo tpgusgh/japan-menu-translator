@@ -1,5 +1,6 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import type { MenuItem } from '../types';
+import { colors, type, radius } from '../theme';
 
 export function MenuItemCard({
   item,
@@ -11,12 +12,12 @@ export function MenuItemCard({
   return (
     <View style={styles.card}>
       <Text style={styles.original}>{item.original}</Text>
-      <Text style={styles.pronunciation}>{item.pronunciation}</Text>
       <Text style={styles.translated}>{item.translated}</Text>
+      <Text style={styles.pronunciation}>{item.pronunciation}</Text>
 
       {item.descriptionState === 'idle' && (
-        <Pressable onPress={() => onShowDescription(item.id)}>
-          <Text style={styles.link}>설명 보기</Text>
+        <Pressable style={styles.chip} onPress={() => onShowDescription(item.id)}>
+          <Text style={styles.chipText}>설명 보기</Text>
         </Pressable>
       )}
       {item.descriptionState === 'loading' && <Text style={styles.desc}>불러오는 중...</Text>}
@@ -29,10 +30,27 @@ export function MenuItemCard({
 }
 
 const styles = StyleSheet.create({
-  card: { padding: 12, borderBottomWidth: 1, borderColor: '#eee', gap: 4 },
-  original: { fontSize: 13, textDecorationLine: 'line-through', color: '#888' },
-  pronunciation: { fontSize: 13, color: '#c00' },
-  translated: { fontSize: 18, fontWeight: '700' },
-  link: { fontSize: 13, color: '#06c' },
-  desc: { fontSize: 13, color: '#333', marginTop: 4 },
+  card: {
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+    padding: 16,
+    marginHorizontal: 12,
+    marginVertical: 6,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  original: { fontSize: type.hint, textDecorationLine: 'line-through', color: colors.original },
+  translated: { fontSize: type.translated, fontWeight: '700', color: colors.ink },
+  pronunciation: { fontSize: type.body, color: colors.pronunciation, fontWeight: '600' },
+  chip: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.chip,
+    borderRadius: radius.sm,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginTop: 8,
+  },
+  chipText: { fontSize: type.hint, color: colors.primary, fontWeight: '600' },
+  desc: { fontSize: type.body, color: colors.inkMuted, marginTop: 8, lineHeight: 20 },
 });

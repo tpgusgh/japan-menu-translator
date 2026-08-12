@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DownloadScreen } from '../screens/DownloadScreen';
 import { ScanScreen } from '../screens/ScanScreen';
 import { ReverseScreen } from '../screens/ReverseScreen';
+import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
 
@@ -17,7 +18,15 @@ export function RootNavigator() {
 
   return (
     <NavigationContainer>
-      <Tab.Navigator screenOptions={{ headerShown: false }}>
+      <Tab.Navigator
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.inkMuted,
+          tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border },
+          tabBarLabelStyle: { fontSize: 13, fontWeight: '600' },
+        }}
+      >
         <Tab.Screen name="스캔" component={ScanScreen} />
         <Tab.Screen name="역번역" component={ReverseScreen} />
       </Tab.Navigator>

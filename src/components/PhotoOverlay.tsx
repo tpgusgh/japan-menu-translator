@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Image, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
 import type { MenuItem } from '../types';
+import { colors, radius } from '../theme';
 
 export function PhotoOverlay({ uri, items }: { uri: string; items: MenuItem[] }) {
   const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
@@ -51,11 +52,19 @@ const styles = StyleSheet.create({
   image: { width: '100%' },
   bubble: {
     position: 'absolute',
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 4,
-    padding: 2,
+    backgroundColor: 'rgba(255,255,255,0.96)',
+    borderRadius: radius.sm,
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
   },
-  original: { fontSize: 10, textDecorationLine: 'line-through', color: '#888' },
-  translated: { fontSize: 13, fontWeight: '700', color: '#111' },
-  pronunciation: { fontSize: 10, color: '#c00' },
+  original: { fontSize: 10, textDecorationLine: 'line-through', color: colors.original },
+  translated: { fontSize: 14, fontWeight: '700', color: colors.ink },
+  pronunciation: { fontSize: 11, color: colors.pronunciation, fontWeight: '600' },
 });

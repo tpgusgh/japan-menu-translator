@@ -1,7 +1,9 @@
 import { useState, useCallback } from 'react';
-import { View, TextInput, Text, Button, StyleSheet } from 'react-native';
+import { View, TextInput, Text, StyleSheet } from 'react-native';
 import { translate } from '../lib/translate';
 import { getPronunciation } from '../lib/pronounce';
+import { PrimaryButton } from '../components/PrimaryButton';
+import { colors, type, radius } from '../theme';
 
 export function ReverseScreen() {
   const [input, setInput] = useState('');
@@ -27,8 +29,14 @@ export function ReverseScreen() {
 
   return (
     <View style={styles.container}>
-      <TextInput style={styles.input} value={input} onChangeText={setInput} placeholder="한국어를 입력하세요" />
-      <Button title="번역" onPress={handleTranslate} disabled={loading} />
+      <TextInput
+        style={styles.input}
+        value={input}
+        onChangeText={setInput}
+        placeholder="한국어를 입력하세요"
+        placeholderTextColor={colors.inkMuted}
+      />
+      <PrimaryButton title="번역" onPress={handleTranslate} disabled={loading} />
       {error && <Text style={styles.error}>번역에 실패했습니다. 다시 시도해주세요.</Text>}
       {result && !error && (
         <View style={styles.result}>
@@ -41,10 +49,27 @@ export function ReverseScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, gap: 12 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 6, padding: 10, fontSize: 16 },
-  result: { marginTop: 16, gap: 4 },
-  japanese: { fontSize: 22, fontWeight: '700' },
-  pronunciation: { fontSize: 16, color: '#c00' },
-  error: { marginTop: 16, fontSize: 16, color: '#c00' },
+  container: { flex: 1, padding: 16, backgroundColor: colors.bg },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: 14,
+    fontSize: type.body,
+    color: colors.ink,
+    backgroundColor: colors.card,
+    marginBottom: 8,
+  },
+  result: {
+    marginTop: 20,
+    gap: 6,
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 18,
+  },
+  japanese: { fontSize: type.japanese, fontWeight: '700', color: colors.ink },
+  pronunciation: { fontSize: type.translated, color: colors.pronunciation, fontWeight: '600' },
+  error: { marginTop: 16, fontSize: type.body, color: colors.danger, textAlign: 'center' },
 });
