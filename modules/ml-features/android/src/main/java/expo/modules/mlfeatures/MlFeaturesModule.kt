@@ -50,7 +50,7 @@ class MlFeaturesModule : Module() {
       val context = appContext.reactContext!!
       val path = Uri.parse(imageUri).path
       val originalBitmap = path?.let { BitmapFactory.decodeFile(it) }
-      val scaleFactor = 1.6f
+      val scaleFactor = 2.5f
 
       val (image, effectiveScale) = if (originalBitmap != null) {
         val scaledBitmap = Bitmap.createScaledBitmap(
