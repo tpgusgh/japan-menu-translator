@@ -101,22 +101,28 @@ const MENU_IMAGE_PROMPT = `첨부한 이미지는 일본어 메뉴판이야. 이
 export async function generateTranslatedMenuImage(photoUri: string): Promise<string> {
   const apiKey = requireApiKey();
 
+  // RN's New Architecture FormData bridge doesn't reliably accept the classic
+  // {uri, name, type} object-literal file part ("Unsupported FormDataPart
+  // implementation") -- fetch the local file into a real Blob instead, which the
+  // bridge does support.
+  const photoRes = await fetch(photoUri);
+  const photoBlob = await photoRes.blob();
+
   const form = new FormData();
   form.append('model', 'gpt-image-1');
   form.append('prompt', MENU_IMAGE_PROMPT);
   form.append('size', '1024x1536');
-  form.append('image[]', {
-    uri: photoUri,
-    name: 'menu.jpg',
-    type: 'image/jpeg',
-  } as unknown as Blob);
+  form.append('image[]', photoBlob, 'menu.jpg');
 
   const res = await fetch('https://api.openai.com/v1/images/edits', {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}` },
     body: form,
   });
-  if (!res.ok) throw new Error(`OpenAI image generation failed: ${res.status}`);
+  if (!res.ok) {
+    const bodyText = await res.text().catch(() => '');
+    throw new Error(`OpenAI image generation failed: ${res.status} ${bodyText}`);
+  }
   const data = await res.json();
   const b64 = data.data[0].b64_json as string;
   return `data:image/png;base64,${b64}`;
