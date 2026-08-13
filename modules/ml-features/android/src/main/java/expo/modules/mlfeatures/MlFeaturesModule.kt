@@ -2,9 +2,14 @@ package expo.modules.mlfeatures
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.Paint
 import android.graphics.Rect
 import android.net.Uri
+import android.util.Base64
+import java.io.ByteArrayOutputStream
 import com.atilika.kuromoji.ipadic.Tokenizer
 import com.google.mlkit.common.model.DownloadConditions
 import com.google.mlkit.common.model.RemoteModelManager
@@ -132,6 +137,45 @@ class MlFeaturesModule : Module() {
         items.sumOf { japaneseCharScore(it["text"] as String) }
 
       if (score(verticalItems) > score(horizontalItems)) verticalItems else horizontalItems
+    }
+
+    // Draws numbered circular markers onto the photo at each given box's center and
+    // returns a base64 JPEG. Used to give a vision LLM unambiguous spatial grounding
+    // for "item N" in a single request/image, instead of a flat text list it has to
+    // blindly match against a busy photo (unreliable once there are dozens of items).
+    AsyncFunction("drawNumberedMarkers") { imageUri: String, boxes: List<Map<String, Int>> ->
+      val path = Uri.parse(imageUri).path
+      val original = path?.let { BitmapFactory.decodeFile(it) }
+        ?: throw IllegalArgumentException("cannot decode image: $imageUri")
+      val mutable = original.copy(Bitmap.Config.ARGB_8888, true)
+      val canvas = Canvas(mutable)
+      val radius = minOf(mutable.width, mutable.height) * 0.018f
+      val circlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.RED }
+      val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        style = Paint.Style.STROKE
+        strokeWidth = radius * 0.15f
+      }
+      val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        textAlign = Paint.Align.CENTER
+        isFakeBoldText = true
+        textSize = radius * 1.15f
+      }
+
+      boxes.forEachIndexed { index, box ->
+        val cx = (box["x"] ?: 0) + (box["width"] ?: 0) / 2f
+        val cy = (box["y"] ?: 0) + (box["height"] ?: 0) / 2f
+        canvas.drawCircle(cx, cy, radius, circlePaint)
+        canvas.drawCircle(cx, cy, radius, borderPaint)
+        val label = (index + 1).toString()
+        val textY = cy - (textPaint.descent() + textPaint.ascent()) / 2
+        canvas.drawText(label, cx, textY, textPaint)
+      }
+
+      val output = ByteArrayOutputStream()
+      mutable.compress(Bitmap.CompressFormat.JPEG, 85, output)
+      Base64.encodeToString(output.toByteArray(), Base64.NO_WRAP)
     }
 
     AsyncFunction("isModelDownloaded").SuspendBody { lang: String ->

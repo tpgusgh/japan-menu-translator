@@ -1,3 +1,6 @@
+import { drawNumberedMarkers } from '../../modules/ml-features';
+import type { BoundingBox } from '../types';
+
 const OPENAI_API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
 
 export interface AiTranslatedItem {
@@ -12,36 +15,30 @@ function requireApiKey(): string {
   return OPENAI_API_KEY;
 }
 
-async function fileToDataUri(uri: string): Promise<string> {
-  const res = await fetch(uri);
-  const blob = await res.blob();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error('failed to read photo file'));
-    reader.onload = () => resolve(reader.result as string);
-    reader.readAsDataURL(blob);
-  });
-}
-
-// AI 번역모드: on-device OCR already gives pixel-accurate positions; this only
-// asks the vision model to re-read (correcting OCR misreads) and translate each
-// detected region, in the same order, so the app can keep rendering with its own
-// existing position-based overlay/list instead of relying on an LLM for coordinates
-// (vision models are unreliable at pixel-precise bounding boxes).
+// AI 번역모드: on-device OCR already gives pixel-accurate positions; drawing a
+// numbered marker at each detected box (native, see drawNumberedMarkers) and
+// sending that ONE annotated photo gives the vision model unambiguous grounding
+// for "item N" -- far more reliable than handing it a flat text list and asking
+// it to blindly match N items against a busy photo with no coordinates at all.
 export async function refineTranslationsWithAI(
   photoUri: string,
-  roughTexts: string[]
+  lines: { text: string; boundingBox: BoundingBox }[]
 ): Promise<AiTranslatedItem[]> {
   const apiKey = requireApiKey();
-  if (roughTexts.length === 0) return [];
-  const imageDataUri = await fileToDataUri(photoUri);
+  if (lines.length === 0) return [];
+  const markedBase64 = await drawNumberedMarkers(
+    photoUri,
+    lines.map((l) => l.boundingBox)
+  );
+  const imageDataUri = `data:image/jpeg;base64,${markedBase64}`;
 
-  const prompt = `이 사진은 일본어 메뉴판이야. 온디바이스 OCR로 아래 순서대로 텍스트 영역을 감지했는데 오독이 있을 수 있어. 사진을 직접 보고 각 영역의 실제 일본어 원문을 정확히 읽고, 한국어 발음(한글 표기)과 한국어 번역, 가격(있으면 "800円" 형식, 없으면 null)을 알려줘.
+  const roughTexts = lines.map((l) => l.text);
+  const prompt = `이 사진은 일본어 메뉴판이야. 각 메뉴 항목 위치에 빨간 원 번호 마커(1, 2, 3...)를 표시해뒀어. 온디바이스 OCR로 미리 읽어본 결과도 참고로 같이 줄게(오독 있을 수 있음). 마커가 가리키는 정확한 위치를 사진에서 직접 보고, 각 번호별 실제 일본어 원문을 정확히 읽고, 한국어 발음(한글 표기)과 한국어 번역, 가격(있으면 "800円" 형식, 없으면 null)을 알려줘.
 
-감지된 순서:
+OCR 참고값 (마커 번호와 동일한 순서):
 ${roughTexts.map((t, i) => `${i + 1}. ${t}`).join('\n')}
 
-정확히 ${roughTexts.length}개 항목에 대해 같은 순서로 아래 JSON 형식으로만 응답해:
+정확히 ${roughTexts.length}개 마커 전부에 대해 번호 순서대로 아래 JSON 형식으로만 응답해:
 {"items": [{"original": "실제 일본어 원문", "translated": "한국어 번역", "pronunciation": "한글 발음", "price": "800円 또는 null"}]}`;
 
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -67,9 +64,13 @@ ${roughTexts.map((t, i) => `${i + 1}. ${t}`).join('\n')}
   if (!res.ok) throw new Error(`OpenAI vision request failed: ${res.status}`);
   const data = await res.json();
   const parsed = JSON.parse(data.choices[0].message.content) as { items: AiTranslatedItem[] };
-  if (!Array.isArray(parsed.items) || parsed.items.length !== roughTexts.length) {
-    throw new Error('AI translation item count mismatch');
+  if (!Array.isArray(parsed.items)) {
+    throw new Error('AI translation response was not a valid items array');
   }
+  // A dense menu (30-40+ markers) can make the model under/overshoot the exact
+  // count despite the prompt's instructions. Return whatever it gave rather than
+  // discarding the whole batch -- the caller falls back to the local OCR text for
+  // any index past what came back, so a partial response still helps.
   return parsed.items;
 }
 

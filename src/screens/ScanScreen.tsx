@@ -74,7 +74,7 @@ export function ScanScreen() {
         let menuItems: MenuItem[];
 
         if (mode === 'ai-translate') {
-          const aiItems = await refineTranslationsWithAI(uri, lines.map((line) => line.text));
+          const aiItems = await refineTranslationsWithAI(uri, lines);
           menuItems = lines.map((line, index) => {
             const ai = aiItems[index];
             return {

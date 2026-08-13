@@ -27,6 +27,13 @@ export async function translateText(text: string, from: 'ja' | 'ko', to: 'ja' | 
   return MlFeatures.translateText(text, from, to);
 }
 
+export async function drawNumberedMarkers(
+  imageUri: string,
+  boxes: { x: number; y: number; width: number; height: number }[]
+): Promise<string> {
+  return MlFeatures.drawNumberedMarkers(imageUri, boxes);
+}
+
 export interface NativeReadingToken {
   surface: string;
   reading: string;
