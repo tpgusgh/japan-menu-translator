@@ -207,7 +207,7 @@ export function ScanScreen() {
           </Pressable>
         </Modal>
 
-        <View style={styles.controlPanel}>
+        <View style={[styles.controlPanel, { paddingBottom: insets.bottom + 8 }]}>
           <View style={styles.zoomRow}>
             <Pressable style={styles.zoomButton} onPress={() => setZoom((z) => Math.max(0, z - 0.15))}>
               <Text style={styles.zoomButtonText}>−</Text>

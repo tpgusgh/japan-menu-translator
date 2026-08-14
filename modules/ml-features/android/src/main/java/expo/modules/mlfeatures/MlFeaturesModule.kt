@@ -136,7 +136,11 @@ class MlFeaturesModule : Module() {
       fun score(items: List<Map<String, Any?>>) =
         items.sumOf { japaneseCharScore(it["text"] as String) }
 
-      if (score(verticalItems) > score(horizontalItems)) verticalItems else horizontalItems
+      // Horizontal is the common case (most menus, and *every* other kind of text
+      // in a photo -- signage, receipts, UI chrome). A close score is more likely
+      // noise than a real vertical menu, so only flip to vertical when it clearly
+      // reads better, not just barely edges the horizontal pass out.
+      if (score(verticalItems) > score(horizontalItems) * 1.3) verticalItems else horizontalItems
     }
 
     // Draws numbered circular markers onto the photo at each given box's center and
