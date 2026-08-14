@@ -1,7 +1,6 @@
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HomeScreen } from '../screens/HomeScreen';
 import { ScanScreen } from '../screens/ScanScreen';
 import { ReverseScreen } from '../screens/ReverseScreen';
@@ -34,8 +33,6 @@ function ReverseIcon({ focused }: { focused: boolean }) {
 }
 
 export function RootNavigator() {
-  const insets = useSafeAreaInsets();
-
   return (
     <NavigationContainer>
       <Tab.Navigator
@@ -43,12 +40,14 @@ export function RootNavigator() {
           headerShown: false,
           tabBarActiveTintColor: colors.indigo,
           tabBarInactiveTintColor: colors.inkMuted,
+          // No custom height/padding here -- @react-navigation/bottom-tabs already
+          // measures the device's safe-area bottom inset itself and sizes the bar
+          // accordingly. A manual height computed from our own insets read ended up
+          // wrong on some Samsung devices (gesture bar still overlapped); trusting
+          // the library's own default sizing is the more portable fix.
           tabBarStyle: {
             backgroundColor: colors.card,
             borderTopColor: colors.border,
-            height: 56 + insets.bottom,
-            paddingBottom: insets.bottom + 6,
-            paddingTop: 8,
           },
           tabBarLabelStyle: { fontSize: 12, fontWeight: '700' },
         }}
