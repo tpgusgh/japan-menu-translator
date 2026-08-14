@@ -129,6 +129,29 @@ const ENTRIES: FoodEntry[] = [
   { term: 'キムチ', translated: '김치', pronunciation: '키무치' },
   { term: 'チーズ', translated: '치즈', pronunciation: '치즈' },
   { term: '厚揚げ', translated: '유부튀김(두꺼운 유부)', pronunciation: '아츠아게' },
+  // ponytail: 한국어-일본어 번역 말뭉치(AI Hub ko2ja, 플리토 번역)의 향토/K-FOOD
+  // 도메인 문장에서 뽑은 한식 카타카나 표기. 일본 내 한식당·퓨전 메뉴판에
+  // 이 표기 그대로 쓰이는 경우가 많아서 추가함.
+  { term: 'ビビンバ', translated: '비빔밥', pronunciation: '비빈바' },
+  { term: 'サムギョプサル', translated: '삼겹살', pronunciation: '사무교푸사루' },
+  { term: 'トッポッキ', translated: '떡볶이', pronunciation: '톳포키' },
+  { term: 'チャプチェ', translated: '잡채', pronunciation: '챠푸체' },
+  { term: 'チヂミ', translated: '부침개(파전)', pronunciation: '치지미' },
+  { term: '参鶏湯', translated: '삼계탕', pronunciation: '사무게탄' },
+  { term: 'カルビタン', translated: '갈비탕', pronunciation: '카루비탄' },
+  { term: 'ユッケジャン', translated: '육개장', pronunciation: '육케장' },
+  { term: 'キムチチゲ', translated: '김치찌개', pronunciation: '키무치치게' },
+  { term: 'テンジャンチゲ', translated: '된장찌개', pronunciation: '텐쟌치게' },
+  { term: 'カムジャタン', translated: '감자탕', pronunciation: '카무자탄' },
+  { term: 'ゴプチャン', translated: '곱창', pronunciation: '고푸챤' },
+  { term: 'すいとん', translated: '수제비', pronunciation: '스이톤' },
+  { term: '冷麺', translated: '냉면', pronunciation: '레이멘' },
+  { term: 'カルグクス', translated: '칼국수', pronunciation: '카루구쿠스' },
+  { term: 'スンデ', translated: '순대', pronunciation: '슨데' },
+  { term: 'クッパ', translated: '국밥', pronunciation: '굿파' },
+  { term: 'プルコギ', translated: '불고기', pronunciation: '푸루코기' },
+  { term: 'ユッケ', translated: '육회', pronunciation: '육케' },
+  { term: '豆乳素麺', translated: '콩국수', pronunciation: '도뉴소멘' },
 ];
 
 const SORTED_ENTRIES = [...ENTRIES].sort((a, b) => b.term.length - a.term.length);
