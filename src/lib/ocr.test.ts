@@ -55,4 +55,15 @@ describe('recognizeText', () => {
 
     expect(result.map((line) => line.orientation)).toEqual(['horizontal', 'vertical']);
   });
+
+  it('drops a block that is only a price -- NOISE_LINE does not cover 円', async () => {
+    (nativeRecognizeText as jest.Mock).mockResolvedValue([
+      { text: '寿司', x: 0, y: 0, width: 10, height: 10, orientation: 'horizontal' as const },
+      { text: '890円', x: 0, y: 0, width: 10, height: 10, orientation: 'horizontal' as const },
+    ]);
+
+    const result = await recognizeText('file://test.jpg');
+
+    expect(result.map((line) => line.text)).toEqual(['寿司']);
+  });
 });

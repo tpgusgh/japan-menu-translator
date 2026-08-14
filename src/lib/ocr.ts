@@ -35,5 +35,10 @@ export async function recognizeText(imageUri: string): Promise<RecognizedLine[]>
         orientation: line.orientation,
         boundingBox: { x: line.x, y: line.y, width: line.width, height: line.height },
       };
-    });
+    })
+    // A block that was just a price (e.g. "890円" -- NOISE_LINE doesn't cover 円,
+    // so it passes the noise/Japanese-ratio checks above on that character alone)
+    // ends up with an empty name once the price is stripped out. Drop it instead of
+    // showing a card with no name.
+    .filter((line) => line.text.length > 0);
 }
