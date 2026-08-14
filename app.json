@@ -4,15 +4,14 @@
     "slug": "japan-menu-translator",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.png",
     "platforms": ["android"],
     "android": {
       "package": "com.example.japanmenutranslator",
       "permissions": ["CAMERA"],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#5B5FEF"
       }
     }
   }
