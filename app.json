@@ -2,17 +2,23 @@
   "expo": {
     "name": "일본 메뉴 번역기",
     "slug": "japan-menu-translator",
-    "version": "1.0.0",
-    "orientation": "portrait",
+    "version": "1.0.1",
+    "orientation": "default",
     "icon": "./assets/logo.png",
-    "platforms": ["android"],
+    "platforms": [
+      "android"
+    ],
     "android": {
-      "package": "com.example.japanmenutranslator",
-      "permissions": ["CAMERA"],
+      "package": "com.jpan",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#5B5FEF"
-      }
+      },
+      "versionCode": 2
     }
   }
 }

@@ -47,3 +47,7 @@ modules/*/android/.gradle/
 
 # parent repo worktrees
 .worktrees/
+
+# local-only data and scratch output (never commit)
+KJ_mo/
+store-assets/
