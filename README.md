@@ -64,3 +64,15 @@ android.packagingOptions.excludes=META-INF/*.md
 ```bash
 npm test
 ```
+
+## Play 스토어용 AAB 빌드
+
+```bash
+./scripts/build-aab.sh   # dist/japan-menu-translator.aab 생성
+```
+
+`expo prebuild --clean`, SDK 경로, JDK 17 고정, 릴리스 서명, R8 난독화 설정을 한 번에 처리한다
+(위 "빌드 문제 해결"의 수동 수정이 필요 없다). 업로드 키는 저장소 밖
+`~/.keystores/jpan-upload.properties`(storeFile/storePassword/keyAlias/keyPassword)에 둔다.
+스토어에 올릴 때마다 `app.json`의 `android.versionCode`를 올려야 한다.
+등록 문안은 `docs/play-store-listing.md`, 개인정보처리방침은 `docs/privacy-policy.md`.
