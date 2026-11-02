@@ -29,7 +29,7 @@ describe('recognizeText', () => {
 
     const result = await recognizeText('file://test.jpg');
 
-    expect(result.map((line) => line.price)).toEqual([null, '800円', '￥900']);
+    expect(result.map((line) => line.price)).toEqual([null, '800円', '¥900']);
   });
 
   it('drops lines that are mostly Latin garbage even with a stray Japanese-looking glyph', async () => {
@@ -42,7 +42,7 @@ describe('recognizeText', () => {
 
     const result = await recognizeText('file://test.jpg');
 
-    expect(result.map((line) => line.text)).toEqual(['寿司', '◆エリンギ']);
+    expect(result.map((line) => line.text)).toEqual(['寿司', 'エリンギ']);
   });
 
   it('passes through the orientation the native side detected', async () => {
@@ -65,5 +65,28 @@ describe('recognizeText', () => {
     const result = await recognizeText('file://test.jpg');
 
     expect(result.map((line) => line.text)).toEqual(['寿司']);
+  });
+
+  it('attaches a price-only block to the name on the same row, or the one above it', async () => {
+    (nativeRecognizeText as jest.Mock).mockResolvedValue([
+      { text: '唐揚げ', x: 0, y: 0, width: 100, height: 20, orientation: 'horizontal' as const },
+      { text: '￥680', x: 300, y: 2, width: 50, height: 20, orientation: 'horizontal' as const },
+      { text: '焼き鳥', x: 0, y: 100, width: 100, height: 20, orientation: 'horizontal' as const },
+      { text: '450円', x: 10, y: 125, width: 50, height: 20, orientation: 'horizontal' as const },
+    ]);
+
+    const result = await recognizeText('file://test.jpg');
+
+    expect(result.map((l) => [l.text, l.price])).toEqual([['唐揚げ', '¥680'], ['焼き鳥', '450円']]);
+  });
+
+  it('strips leading bullets and normalizes full-width digits', async () => {
+    (nativeRecognizeText as jest.Mock).mockResolvedValue([
+      { text: '◆天ぷら ８００円', x: 0, y: 0, width: 10, height: 10, orientation: 'horizontal' as const },
+    ]);
+
+    const result = await recognizeText('file://test.jpg');
+
+    expect(result.map((l) => [l.text, l.price])).toEqual([['天ぷら', '800円']]);
   });
 });

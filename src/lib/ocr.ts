@@ -4,8 +4,6 @@ import type { RecognizedLine } from '../types';
 const NOISE_LINE = /^[0-9¥$.,\s\-~]+$/;
 const JAPANESE_CHAR = /[぀-ゟ゠-ヿ一-鿿]/g;
 const LATIN_LETTER = /[A-Za-z]/g;
-// ponytail: only catches price glued to the name on one OCR line (e.g. "天ぷら 800円").
-// price on its own separate line still gets dropped as noise; pair-by-proximity if that matters later.
 const PRICE_PATTERN = /[￥¥]\s?[\d,]+|[\d,]+\s?円/;
 
 // ML Kit's on-device confidence score is unreliable (often 0/null depending on Play
@@ -20,25 +18,60 @@ function isMostlyJapanese(text: string): boolean {
   return japaneseCount > latinCount;
 }
 
+const PRICE_ONLY = /^\s*(?:[￥¥]\s?[\d,]+|[\d,]+\s?円)\s*$/;
+const LEADING_BULLET = /^[◆◇●○■□★☆※・·\-*▶▷>]+\s*/;
+
+type Box = { x: number; y: number; width: number; height: number };
+type Parsed = RecognizedLine & { boundingBox: Box };
+
+// A menu often puts the price in its own OCR block next to the name ("唐揚げ" ... "￥680").
+// Attach each price-only block to the nearest priceless name: first on the same row (to the
+// right, the usual layout), else directly below (vertical/stacked layout).
+function attachPrice(price: Parsed, names: Parsed[]): Parsed | null {
+  const p = price.boundingBox;
+  let best: Parsed | null = null;
+  let bestGap = Infinity;
+  for (const name of names) {
+    if (name.price) continue;
+    const n = name.boundingBox;
+    const sameRow = Math.abs(p.y + p.height / 2 - (n.y + n.height / 2)) <= Math.max(n.height, p.height) * 0.6;
+    const rightGap = p.x - (n.x + n.width);
+    const below = p.y >= n.y && p.y - (n.y + n.height) <= n.height * 2;
+    const overlapsX = p.x < n.x + n.width && p.x + p.width > n.x;
+    const gap = sameRow && rightGap >= -n.width * 0.2 ? Math.max(rightGap, 0) : below && overlapsX ? p.y - (n.y + n.height) + 1e5 : Infinity;
+    if (gap < bestGap) {
+      bestGap = gap;
+      best = name;
+    }
+  }
+  return best;
+}
+
 export async function recognizeText(imageUri: string): Promise<RecognizedLine[]> {
-  const lines = await nativeRecognizeText(imageUri);
-  return lines
-    .map((line) => ({ ...line, text: line.text.trim() }))
-    .filter((line) => !NOISE_LINE.test(line.text) && isMostlyJapanese(line.text))
-    .map((line) => {
-      const priceMatch = line.text.match(PRICE_PATTERN);
-      const price = priceMatch ? priceMatch[0].replace(/\s+/g, '') : null;
-      const text = priceMatch ? line.text.replace(priceMatch[0], '').trim() : line.text;
-      return {
-        text,
-        price,
-        orientation: line.orientation,
-        boundingBox: { x: line.x, y: line.y, width: line.width, height: line.height },
-      };
-    })
-    // A block that was just a price (e.g. "890円" -- NOISE_LINE doesn't cover 円,
-    // so it passes the noise/Japanese-ratio checks above on that character alone)
-    // ends up with an empty name once the price is stripped out. Drop it instead of
-    // showing a card with no name.
-    .filter((line) => line.text.length > 0);
+  const raw = await nativeRecognizeText(imageUri);
+  const names: Parsed[] = [];
+  const priceOnly: Parsed[] = [];
+
+  for (const line of raw) {
+    const text = line.text.normalize('NFKC').trim().replace(LEADING_BULLET, '');
+    const boundingBox = { x: line.x, y: line.y, width: line.width, height: line.height };
+    if (PRICE_ONLY.test(text)) {
+      priceOnly.push({ text: '', price: text.replace(/\s+/g, ''), orientation: line.orientation, boundingBox });
+      continue;
+    }
+    if (NOISE_LINE.test(text) || !isMostlyJapanese(text)) continue;
+    const priceMatch = text.match(PRICE_PATTERN);
+    const price = priceMatch ? priceMatch[0].replace(/\s+/g, '') : null;
+    const name = priceMatch ? text.replace(priceMatch[0], '').trim() : text;
+    // A block that was just a price glued to nothing (e.g. "890円" matched by PRICE_PATTERN
+    // only after other text) leaves an empty name -- drop it instead of an empty card.
+    if (name.length === 0) continue;
+    names.push({ text: name, price, orientation: line.orientation, boundingBox });
+  }
+
+  for (const price of priceOnly) {
+    const target = attachPrice(price, names);
+    if (target) target.price = price.price;
+  }
+  return names;
 }

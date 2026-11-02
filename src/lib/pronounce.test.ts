@@ -27,4 +27,34 @@ describe('getPronunciation', () => {
     expect(result).toBe('400');
     expect(result).not.toContain('*');
   });
+
+  it('조사 は는 표기(하)가 아니라 발음(와)로 읽는다', async () => {
+    (getReadings as jest.Mock).mockResolvedValue([
+      { surface: '名前', reading: 'ナマエ' },
+      { surface: 'は', reading: 'ハ' },
+      { surface: '何', reading: 'ナニ' },
+      { surface: 'です', reading: 'デス' },
+      { surface: 'か', reading: 'カ' },
+    ]);
+    const result = await getPronunciation('名前は何ですか');
+    expect(result).toBe('나마에와난데스카');
+  });
+
+  it('조사 へ는 표기(헤)가 아니라 발음(에)로 읽는다', async () => {
+    (getReadings as jest.Mock).mockResolvedValue([
+      { surface: '東京', reading: 'トウキョウ' },
+      { surface: 'へ', reading: 'ヘ' },
+    ]);
+    const result = await getPronunciation('東京へ');
+    expect(result).toBe('토우쿄우에');
+  });
+
+  it('何が처럼 です/だ가 안 이어지면 나니 그대로 둔다', async () => {
+    (getReadings as jest.Mock).mockResolvedValue([
+      { surface: '何', reading: 'ナニ' },
+      { surface: 'が', reading: 'ガ' },
+    ]);
+    const result = await getPronunciation('何が');
+    expect(result).toBe('나니가');
+  });
 });

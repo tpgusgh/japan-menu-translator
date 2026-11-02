@@ -152,16 +152,98 @@ const ENTRIES: FoodEntry[] = [
   { term: 'プルコギ', translated: '불고기', pronunciation: '푸루코기' },
   { term: 'ユッケ', translated: '육회', pronunciation: '육케' },
   { term: '豆乳素麺', translated: '콩국수', pronunciation: '도뉴소멘' },
+  // ponytail: 자주 나오는 이자카야/식당 메뉴판 어휘 추가분 (일반 상식 기반, 코퍼스 미사용).
+  { term: '唐揚げ弁当', translated: '가라아게 도시락', pronunciation: '카라아게벤토' },
+  { term: '定食', translated: '정식', pronunciation: '테이쇼쿠' },
+  { term: 'セット', translated: '세트', pronunciation: '셋토' },
+  { term: 'ランチ', translated: '런치(점심 세트)', pronunciation: '란치' },
+  { term: 'お任せ', translated: '오마카세(주방장 특선)', pronunciation: '오마카세' },
+  { term: '盛り合わせ', translated: '모둠', pronunciation: '모리아와세' },
+  { term: '握り', translated: '니기리(초밥)', pronunciation: '니기리' },
+  { term: '巻き寿司', translated: '마키(김초밥)', pronunciation: '마키즈시' },
+  { term: '軍艦', translated: '군칸마키(초밥)', pronunciation: '군칸' },
+  { term: 'えんがわ', translated: '광어 지느러미살', pronunciation: '엔가와' },
+  { term: '秋刀魚', translated: '꽁치', pronunciation: '삼마' },
+  { term: '鯖', translated: '고등어', pronunciation: '사바' },
+  { term: 'ホッケ', translated: '임연수어구이(홋케)', pronunciation: '홋케' },
+  { term: '煮付け', translated: '조림', pronunciation: '니츠케' },
+  { term: '塩焼き', translated: '소금구이', pronunciation: '시오야키' },
+  { term: '西京焼き', translated: '사이쿄야키(된장절임구이)', pronunciation: '사이쿄야키' },
+  { term: '焼き魚', translated: '생선구이', pronunciation: '야키자카나' },
+  { term: 'お浸し', translated: '오히타시(나물무침)', pronunciation: '오히타시' },
+  { term: 'ポテトサラダ', translated: '감자샐러드', pronunciation: '포테토사라다' },
+  { term: 'コロッケ', translated: '고로케', pronunciation: '코롯케' },
+  { term: 'メンチカツ', translated: '멘치카츠(다짐육까스)', pronunciation: '멘치카츠' },
+  { term: 'ハムカツ', translated: '햄까스', pronunciation: '하무카츠' },
+  { term: 'キャベツ', translated: '양배추', pronunciation: '캬베츠' },
+  { term: 'ししゃも', translated: '열빙어구이(시샤모)', pronunciation: '시샤모' },
+  { term: '塩辛', translated: '젓갈(시오카라)', pronunciation: '시오카라' },
+  { term: '角ハイボール', translated: '카쿠 하이볼', pronunciation: '카쿠하이보루' },
+  { term: 'レモンハイ', translated: '레몬하이(레몬소주)', pronunciation: '레몬하이' },
+  { term: 'ウーロンハイ', translated: '우롱하이(우롱차소주)', pronunciation: '우롱하이' },
+  { term: '緑茶ハイ', translated: '녹차하이(녹차소주)', pronunciation: '료쿠챠하이' },
+  { term: 'プリン', translated: '푸딩', pronunciation: '푸린' },
+  { term: '抹茶アイス', translated: '말차 아이스크림', pronunciation: '맛챠아이스' },
+  { term: 'パフェ', translated: '파르페', pronunciation: '파훼' },
+  { term: 'ウーロン茶', translated: '우롱차', pronunciation: '우롱챠' },
+  { term: 'コーラ', translated: '콜라', pronunciation: '코라' },
+  { term: 'オレンジジュース', translated: '오렌지주스', pronunciation: '오렌지쥬스' },
+  { term: 'ほうじ茶', translated: '호지차', pronunciation: '호지챠' },
+  { term: '緑茶', translated: '녹차', pronunciation: '료쿠챠' },
+  { term: 'お子様ランチ', translated: '어린이 런치', pronunciation: '오코사마란치' },
+  { term: 'もろきゅう', translated: '오이 된장무침', pronunciation: '모로큐' },
+  { term: '鰹のたたき', translated: '가다랑어 다타키(살짝구운 회)', pronunciation: '카츠오노타타키' },
+  { term: '手羽先', translated: '닭날개튀김', pronunciation: '테바사키' },
+  { term: '弁当', translated: '도시락', pronunciation: '벤토' },
 ];
 
-const SORTED_ENTRIES = [...ENTRIES].sort((a, b) => b.term.length - a.term.length);
-const NOISE_CHARS = /[◆·|:：、,，\s]/g;
+// Lookup runs on a "folded" form so OCR slips and spelling variants still hit:
+// NFKC (full/half-width), hiragana -> katakana, and glyphs ML Kit commonly confuses
+// with katakana (力/カ, 口/ロ, 夕/タ, 二/ニ, 八/ハ, 一/ー), a dropped handakuten (ぷ read as ぶ),
+// and 鮫 read for 餃. Both sides are folded the same
+// way, so the mapping only has to be consistent, not "correct".
+const NOISE_CHARS = /[◆◇●○■□★☆※·|:：、,，\s]/g;
+const CONFUSABLE: Record<string, string> = { 力: 'カ', 口: 'ロ', 夕: 'タ', 二: 'ニ', 八: 'ハ', 一: 'ー', 鮫: '餃' };
+const HANDAKUTEN_TO_DAKUTEN: Record<string, string> = {
+  ぱ: 'ば', ぴ: 'び', ぷ: 'ぶ', ぺ: 'べ', ぽ: 'ぼ', パ: 'バ', ピ: 'ビ', プ: 'ブ', ペ: 'ベ', ポ: 'ボ',
+};
+
+function fold(text: string): string {
+  return text
+    .normalize('NFKC')
+    .replace(NOISE_CHARS, '')
+    .replace(/[ぱぴぷぺぽパピプペポ]/g, (c) => HANDAKUTEN_TO_DAKUTEN[c])
+    .replace(/[ぁ-ゖ]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 0x60))
+    .replace(/[力口夕二八一鮫]/g, (c) => CONFUSABLE[c]);
+}
+
+const SORTED_ENTRIES = [...ENTRIES]
+  .map((entry) => ({ entry, folded: fold(entry.term) }))
+  .sort((a, b) => b.folded.length - a.folded.length);
+
+// ponytail: substitution-only fuzzy match (one wrong glyph, same length); dropped/extra
+// glyphs still miss. Upgrade to real edit distance if OCR deletions turn out common.
+const FUZZY_MIN_LENGTH = 5;
+
+function hasOneSubstitution(text: string, term: string): boolean {
+  for (let start = 0; start + term.length <= text.length; start++) {
+    let diff = 0;
+    for (let k = 0; k < term.length && diff <= 1; k++) {
+      if (text[start + k] !== term[k]) diff++;
+    }
+    if (diff <= 1) return true;
+  }
+  return false;
+}
 
 export function lookupFoodTerm(text: string): FoodEntry | null {
-  const normalized = text.replace(NOISE_CHARS, '');
+  const normalized = fold(text);
   if (!normalized) return null;
-  for (const entry of SORTED_ENTRIES) {
-    if (normalized.includes(entry.term)) return entry;
+  for (const { entry, folded } of SORTED_ENTRIES) {
+    if (normalized.includes(folded)) return entry;
+  }
+  for (const { entry, folded } of SORTED_ENTRIES) {
+    if (folded.length >= FUZZY_MIN_LENGTH && hasOneSubstitution(normalized, folded)) return entry;
   }
   return null;
 }

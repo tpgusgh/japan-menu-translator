@@ -27,6 +27,10 @@ export async function translateText(text: string, from: 'ja' | 'ko', to: 'ja' | 
   return MlFeatures.translateText(text, from, to);
 }
 
+export async function recognizeSpeech(locale: string): Promise<string> {
+  return MlFeatures.recognizeSpeech(locale);
+}
+
 export async function drawNumberedMarkers(
   imageUri: string,
   boxes: { x: number; y: number; width: number; height: number }[]
