@@ -1,6 +1,5 @@
-import { Pressable, Text, StyleSheet, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { colors, radius, type, gradients, glowShadow } from '../theme';
+import { Pressable, Text, StyleSheet } from 'react-native';
+import { colors, radius, type } from '../theme';
 
 export function PrimaryButton({
   title,
@@ -13,81 +12,35 @@ export function PrimaryButton({
   disabled?: boolean;
   variant?: 'primary' | 'secondary';
 }) {
-  if (variant === 'secondary') {
-    return (
-      <Pressable
-        onPress={onPress}
-        disabled={disabled}
-        style={({ pressed }) => [
-          styles.base,
-          styles.secondary,
-          disabled && styles.disabled,
-          pressed && !disabled && styles.pressed,
-        ]}
-      >
-        <Text style={styles.secondaryText}>{title}</Text>
-      </Pressable>
-    );
-  }
-
+  const secondary = variant === 'secondary';
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      style={({ pressed }) => [styles.wrapper, disabled && styles.disabled, pressed && !disabled && styles.pressed]}
+      style={({ pressed }) => [
+        styles.base,
+        secondary ? styles.secondary : styles.primary,
+        disabled && styles.disabled,
+        pressed && !disabled && styles.pressed,
+      ]}
     >
-      <LinearGradient
-        colors={gradients.brand}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.base, styles.primary]}
-      >
-        <View style={styles.sheen} pointerEvents="none" />
-        <Text style={styles.primaryText}>{title}</Text>
-      </LinearGradient>
+      <Text style={secondary ? styles.secondaryText : styles.primaryText}>{title}</Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    borderRadius: radius.md,
-    marginHorizontal: 12,
-    marginVertical: 6,
-    ...glowShadow,
-  },
   base: {
-    borderRadius: radius.md,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  primary: {},
-  sheen: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '55%',
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderTopLeftRadius: radius.md,
-    borderTopRightRadius: radius.md,
-  },
-  secondary: {
-    backgroundColor: colors.chip,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginHorizontal: 12,
-    marginVertical: 6,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
+    minHeight: 54,
+    borderRadius: radius.pill,
+    paddingHorizontal: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  disabled: { opacity: 0.5 },
-  pressed: { opacity: 0.88 },
-  primaryText: { color: colors.primaryText, fontSize: type.body, fontWeight: '700', letterSpacing: 0.2 },
-  secondaryText: { color: colors.indigo, fontSize: type.body, fontWeight: '700' },
+  primary: { backgroundColor: colors.pink },
+  secondary: { backgroundColor: colors.chip },
+  disabled: { opacity: 0.45 },
+  pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
+  primaryText: { color: colors.primaryText, fontSize: type.body + 1, fontWeight: '800' },
+  secondaryText: { color: colors.ink, fontSize: type.body + 1, fontWeight: '800' },
 });

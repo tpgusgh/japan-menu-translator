@@ -1,10 +1,9 @@
 import { useCallback } from 'react';
 import { View, Text, Image, Pressable, StyleSheet, ScrollView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { setStatusBarStyle } from 'expo-status-bar';
-import { colors, type, radius, shadow, gradients, glowShadow } from '../theme';
+import { colors, type, radius } from '../theme';
 
 export function HomeScreen() {
   const navigation = useNavigation<any>();
@@ -12,66 +11,66 @@ export function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      setStatusBarStyle('light');
+      setStatusBarStyle('dark');
     }, [])
   );
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-      <LinearGradient
-        colors={gradients.brand}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.hero, { paddingTop: insets.top + 28 }]}
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 20 }]}>
+      <View style={styles.brandRow}>
+        <Image source={require('../../assets/logo.png')} style={styles.logo} />
+        <Text style={styles.brand}>메뉴 렌즈</Text>
+      </View>
+
+      <Text style={styles.headline}>일본 메뉴판,{'\n'}찍으면 바로 읽혀요</Text>
+      <Text style={styles.sub}>뜻과 한글 발음, 가격까지 한 번에 알려줘요.</Text>
+
+      <Pressable
+        style={({ pressed }) => [styles.scanButton, pressed && styles.pressed]}
+        onPress={() => navigation.navigate('스캔')}
       >
-        <View style={styles.heroSheen} pointerEvents="none" />
-        <Image source={require('../../assets/logo.png')} style={styles.heroLogo} />
-        <Text style={styles.heroTitle}>메뉴 렌즈</Text>
-        <Text style={styles.heroSubtitle}>일본 메뉴판을 사진 한 장으로{'\n'}한국어로 바꿔드려요</Text>
-      </LinearGradient>
+        <View style={styles.lens}>
+          <View style={styles.lensInner} />
+        </View>
+        <View style={styles.scanTextGroup}>
+          <Text style={styles.scanTitle}>메뉴판 스캔하기</Text>
+          <Text style={styles.scanDesc}>카메라로 찍거나 사진을 골라요</Text>
+        </View>
+      </Pressable>
 
-      <View style={styles.actions}>
-        <Pressable style={styles.actionCard} onPress={() => navigation.navigate('스캔')}>
-          <LinearGradient colors={gradients.brand} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionIcon}>
-            <View style={styles.cameraGlyphOuter}>
-              <View style={styles.cameraGlyphInner} />
-            </View>
-          </LinearGradient>
-          <View style={styles.actionTextGroup}>
-            <Text style={styles.actionTitle}>메뉴판 스캔하기</Text>
-            <Text style={styles.actionDesc}>카메라로 찍으면 바로 번역돼요</Text>
-          </View>
-          <Text style={styles.actionArrow}>›</Text>
+      <View style={styles.tiles}>
+        <Pressable
+          style={({ pressed }) => [styles.tile, styles.tileSky, pressed && styles.pressed]}
+          onPress={() => navigation.navigate('역번역')}
+        >
+          <Text style={styles.tileTitle}>역번역</Text>
+          <Text style={styles.tileDesc}>한국어로 물어볼 말을{'\n'}일본어로</Text>
         </Pressable>
-
-        <Pressable style={styles.actionCard} onPress={() => navigation.navigate('역번역')}>
-          <View style={[styles.actionIcon, styles.actionIconAlt]}>
-            <Text style={styles.actionIconTextAlt}>⇄</Text>
-          </View>
-          <View style={styles.actionTextGroup}>
-            <Text style={styles.actionTitle}>역번역</Text>
-            <Text style={styles.actionDesc}>한국어로 물어볼 말을 일본어로</Text>
-          </View>
-          <Text style={styles.actionArrow}>›</Text>
+        <Pressable
+          style={({ pressed }) => [styles.tile, styles.tileYellow, pressed && styles.pressed]}
+          onPress={() => navigation.navigate('히스토리')}
+        >
+          <Text style={styles.tileTitle}>스캔 기록</Text>
+          <Text style={styles.tileDesc}>전에 번역한 메뉴를{'\n'}다시 보기</Text>
         </Pressable>
       </View>
 
-      <View style={styles.stepsCard}>
+      <View style={styles.steps}>
         <Text style={styles.stepsTitle}>이렇게 써요</Text>
-        <Step number={1} text="메뉴판을 스캔 프레임 안에 맞춰요" />
-        <Step number={2} text="촬영하면 자동으로 번역돼요" />
-        <Step number={3} text="궁금한 메뉴는 설명 보기를 눌러요" />
+        <Step n={1} text="메뉴판이 프레임 안에 들어오게 맞춰요" />
+        <Step n={2} text="찍으면 메뉴마다 뜻과 읽는 법이 나와요" />
+        <Step n={3} text="궁금한 메뉴는 설명 보기를 눌러요" />
       </View>
     </ScrollView>
   );
 }
 
-function Step({ number, text }: { number: number; text: string }) {
+function Step({ n, text }: { n: number; text: string }) {
   return (
     <View style={styles.step}>
-      <LinearGradient colors={gradients.brand} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.stepBadge}>
-        <Text style={styles.stepBadgeText}>{number}</Text>
-      </LinearGradient>
+      <View style={styles.stepNo}>
+        <Text style={styles.stepNoText}>{n}</Text>
+      </View>
       <Text style={styles.stepText}>{text}</Text>
     </View>
   );
@@ -79,73 +78,45 @@ function Step({ number, text }: { number: number; text: string }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  hero: {
-    paddingBottom: 32,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    borderBottomLeftRadius: radius.lg,
-    borderBottomRightRadius: radius.lg,
-    overflow: 'hidden',
-  },
-  heroSheen: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '60%',
-    backgroundColor: 'rgba(255,255,255,0.14)',
-  },
-  heroLogo: { width: 72, height: 72, borderRadius: 20, marginBottom: 14, ...glowShadow },
-  heroTitle: { fontSize: type.display, fontWeight: '800', color: '#fff', letterSpacing: 0.3 },
-  heroSubtitle: {
-    fontSize: type.body,
-    color: 'rgba(255,255,255,0.9)',
-    textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 21,
-  },
-  actions: { paddingHorizontal: 16, marginTop: -18, gap: 12 },
-  actionCard: {
-    backgroundColor: colors.card,
+  content: { paddingHorizontal: 20, paddingBottom: 40 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  logo: { width: 40, height: 40, borderRadius: 12 },
+  brand: { fontSize: type.title - 2, fontWeight: '900', color: colors.ink },
+  headline: { marginTop: 28, fontSize: type.display, lineHeight: 44, fontWeight: '900', color: colors.ink },
+  sub: { marginTop: 10, fontSize: type.body, color: colors.inkMuted },
+  scanButton: {
+    marginTop: 28,
+    backgroundColor: colors.pink,
     borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 16,
+    paddingVertical: 24,
+    paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    ...shadow,
+    gap: 18,
   },
-  actionIcon: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  actionIconAlt: { backgroundColor: colors.chip },
-  actionIconTextAlt: { fontSize: 22, fontWeight: '800', color: colors.indigo },
-  cameraGlyphOuter: {
-    width: 24,
-    height: 18,
-    borderRadius: 5,
-    borderWidth: 2,
-    borderColor: '#fff',
+  lens: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(255,255,255,0.28)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cameraGlyphInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
-  actionTextGroup: { flex: 1, gap: 2 },
-  actionTitle: { fontSize: type.body, fontWeight: '800', color: colors.ink },
-  actionDesc: { fontSize: 12, color: colors.inkMuted },
-  actionArrow: { fontSize: 24, color: colors.original, fontWeight: '700' },
-  stepsCard: {
-    marginTop: 24,
-    marginHorizontal: 16,
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 18,
-    gap: 14,
-  },
-  stepsTitle: { fontSize: 12, fontWeight: '800', color: colors.indigo, letterSpacing: 0.5, textTransform: 'uppercase' },
-  step: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  stepBadge: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  stepBadgeText: { color: '#fff', fontSize: 13, fontWeight: '800' },
-  stepText: { flex: 1, fontSize: type.body, color: colors.ink, fontWeight: '500' },
+  lensInner: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#fff' },
+  scanTextGroup: { flex: 1, gap: 3 },
+  scanTitle: { fontSize: type.title + 1, fontWeight: '900', color: '#fff' },
+  scanDesc: { fontSize: type.hint + 1, color: 'rgba(255,255,255,0.9)', fontWeight: '600' },
+  pressed: { opacity: 0.88, transform: [{ scale: 0.985 }] },
+  tiles: { flexDirection: 'row', gap: 12, marginTop: 12 },
+  tile: { flex: 1, borderRadius: radius.lg, padding: 20, minHeight: 132, justifyContent: 'space-between' },
+  tileSky: { backgroundColor: colors.skySoft },
+  tileYellow: { backgroundColor: colors.yellowSoft },
+  tileTitle: { fontSize: type.title, fontWeight: '900', color: colors.ink },
+  tileDesc: { fontSize: type.hint + 1, lineHeight: 19, color: colors.ink, opacity: 0.7, fontWeight: '600' },
+  steps: { marginTop: 24, backgroundColor: colors.card, borderRadius: radius.lg, padding: 22, gap: 16 },
+  stepsTitle: { fontSize: type.title, fontWeight: '900', color: colors.ink },
+  step: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  stepNo: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.pinkSoft, alignItems: 'center', justifyContent: 'center' },
+  stepNoText: { fontSize: 14, fontWeight: '900', color: colors.pinkDeep },
+  stepText: { flex: 1, fontSize: type.body, color: colors.ink, lineHeight: 21, fontWeight: '600' },
 });

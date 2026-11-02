@@ -1,88 +1,51 @@
-import { View, Text, Image, StyleSheet } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { Text, StyleSheet } from 'react-native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { HomeScreen } from '../screens/HomeScreen';
 import { ScanScreen } from '../screens/ScanScreen';
 import { ReverseScreen } from '../screens/ReverseScreen';
+import { HistoryScreen } from '../screens/HistoryScreen';
 import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
 
-function HomeIcon({ focused }: { focused: boolean }) {
-  return (
-    <Image source={require('../../assets/logo.png')} style={[styles.tabLogo, { opacity: focused ? 1 : 0.45 }]} />
-  );
+function TabLabel({ focused, children }: { focused: boolean; children: string }) {
+  return <Text style={[styles.label, focused && styles.labelActive]}>{children}</Text>;
 }
 
-function ScanIcon({ focused }: { focused: boolean }) {
-  return (
-    <View style={[styles.badge, focused && styles.badgeActive]}>
-      <View style={[styles.cameraGlyphOuter, focused && styles.cameraGlyphOuterActive]}>
-        <View style={[styles.cameraGlyphInner, focused && styles.cameraGlyphInnerActive]} />
-      </View>
-    </View>
-  );
-}
+const navTheme = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: colors.bg } };
 
-function ReverseIcon({ focused }: { focused: boolean }) {
-  return (
-    <View style={[styles.badge, focused && styles.badgeActive]}>
-      <Text style={[styles.badgeText, focused && styles.badgeTextActive]}>⇄</Text>
-    </View>
-  );
-}
-
+// Text-only tabs: the current page sits in a soft pink pill. No emoji or drawn glyphs, so
+// the bar looks identical on every Android skin.
 export function RootNavigator() {
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navTheme}>
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: colors.indigo,
+          tabBarActiveTintColor: colors.pinkDeep,
           tabBarInactiveTintColor: colors.inkMuted,
           // No custom height/padding here -- @react-navigation/bottom-tabs already
           // measures the device's safe-area bottom inset itself and sizes the bar
           // accordingly. A manual height computed from our own insets read ended up
           // wrong on some Samsung devices (gesture bar still overlapped); trusting
           // the library's own default sizing is the more portable fix.
-          tabBarStyle: {
-            backgroundColor: colors.card,
-            borderTopColor: colors.border,
-          },
-          tabBarLabelStyle: { fontSize: 12, fontWeight: '700' },
+          tabBarStyle: { backgroundColor: colors.card, borderTopWidth: 0, elevation: 0 },
+          tabBarIconStyle: { display: 'none' },
+          tabBarItemStyle: { justifyContent: 'center' },
+          tabBarLabel: ({ focused, children }) => <TabLabel focused={focused}>{children}</TabLabel>,
         }}
       >
-        <Tab.Screen name="홈" component={HomeScreen} options={{ tabBarIcon: HomeIcon }} />
-        <Tab.Screen name="스캔" component={ScanScreen} options={{ tabBarIcon: ScanIcon }} />
-        <Tab.Screen name="역번역" component={ReverseScreen} options={{ tabBarIcon: ReverseIcon }} />
+        <Tab.Screen name="홈" component={HomeScreen} />
+        <Tab.Screen name="스캔" component={ScanScreen} />
+        <Tab.Screen name="역번역" component={ReverseScreen} />
+        <Tab.Screen name="히스토리" component={HistoryScreen} />
       </Tab.Navigator>
     </NavigationContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  tabLogo: { width: 26, height: 26, borderRadius: 7 },
-  badge: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: colors.chip,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeActive: { backgroundColor: colors.indigo },
-  badgeText: { fontSize: 15, fontWeight: '800', color: colors.inkMuted },
-  badgeTextActive: { color: '#fff' },
-  cameraGlyphOuter: {
-    width: 15,
-    height: 11,
-    borderRadius: 3,
-    borderWidth: 1.5,
-    borderColor: colors.inkMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cameraGlyphOuterActive: { borderColor: '#fff' },
-  cameraGlyphInner: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.inkMuted },
-  cameraGlyphInnerActive: { backgroundColor: '#fff' },
+  label: { fontSize: 14, fontWeight: '800', color: colors.inkMuted, paddingVertical: 7, paddingHorizontal: 12, borderRadius: 999, overflow: 'hidden' },
+  labelActive: { color: colors.pinkDeep, backgroundColor: colors.pinkSoft },
 });
